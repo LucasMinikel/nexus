@@ -26,7 +26,7 @@ Prioridade: experiências em que o visitante observa agentes e algoritmos tomand
 | ⬜ | Mundo 2D com regras editáveis | 1.4 Game World Simulation | navegador |
 | ⬜ | Inspetor de agentes | 1.5 Game AI Visualization | navegador |
 | ⬜ | Simulador de netcode | 1.6 Multiplayer Game Engineering | navegador |
-| ⬜ | Mapa de oportunidades → dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) (era “Explorador espacial”) | 2.1 Maps & Spatial Visualization | navegador |
+| ✅ | Mapa de oportunidades → dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) (era “Explorador espacial”) | 2.1 Maps & Spatial Visualization | navegador |
 | ✅ | Opções de trajeto → dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) (era “Comparador de rotas”) | 2.2 Route Optimization & Pathfinding | navegador |
 | ✅ | Motor de correspondência geográfica → implementado dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) | 2.3 Geospatial Matching Engine | navegador |
 | ✅ | [Vagas e Candidatos](../src/pages/projetos/vagas.astro) | 2.4 Vacancy & Candidate Matching | navegador |
@@ -207,7 +207,7 @@ Tópicos: Interactive Maps · Geospatial Visualization · Geographic Clustering 
 
 Experimentos:
 
-- ⬜ **Mapa de oportunidades** (dentro de Vagas e Candidatos; decisão de 2026-11-23) — Hexágonos com a densidade de vagas e de candidatos no lugar das 6 regiões fixas, filtros por área, curso, turno e tempo de viagem, e onde há vagas sem candidatos alcançáveis (e o contrário). Fecha as pendências “clusters e heatmap” e “área de cobertura por vaga” do 2.4.
+- ✅ **Mapa de oportunidades** (dentro de Vagas e Candidatos; 2026-11-23) — Hexágonos com a densidade de vagas e de candidatos no lugar das 6 regiões fixas, filtros por área, curso, turno e tempo de viagem, e onde há vagas sem candidatos alcançáveis (e o contrário). Fecha as pendências “clusters e heatmap” e “área de cobertura por vaga” do 2.4.
 - ⬜ Hipótese para o Lab: “um índice espacial (grade, H3 ou árvore) muda a busca por proximidade de O(n) para quase constante a partir de quantos pontos?” — medição, não projeto.
 
 ### 2.2 Route Optimization & Pathfinding
@@ -249,9 +249,9 @@ Pendências da especificação original do 2.4 (o restante já está no experime
 
 - ✅ Mapa real: ruas do OpenStreetMap das 27 capitais (10 × 10 km centrais), embutidas no site; “usar minha região” abre a capital mais próxima sem enviar a localização (2026-11-21).
 - ⬜ Endereço e bairro reais das vagas e dos candidatos (hoje: posições sorteadas perto das ruas; regiões são terços × metades do quadrado).
-- ⬜ Clusters geográficos e heatmap contínuo de oportunidades (hoje: sombreamento por região).
-- ⬜ Áreas de cobertura por vaga (hoje: alcance apenas do candidato selecionado).
-- ⬜ Comparação lado a lado entre dois candidatos para a mesma vaga.
+- ✅ Densidade de oportunidades: mapa de hexágonos com acesso a vagas e pessoas sem vaga possível (2026-11-23).
+- ✅ Área de cobertura por vaga: “pessoas na área” acende as ruas alcançáveis a partir da vaga no tempo escolhido.
+- ⬜ Comparação lado a lado entre dois candidatos para a mesma vaga (as opções de trajeto já comparam formas de ir de um mesmo candidato).
 - ⬜ Mapa real (MapLibre + OSM) e tempo de deslocamento de um serviço de roteamento, com transporte público quando houver GTFS.
 
 #### Tecnologias candidatas: Geoespacial

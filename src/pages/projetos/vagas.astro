@@ -20,6 +20,7 @@ const files = [
   ['src/lib/matching/api.ts', 'Contrato navegador ↔ Cloud Run: runMatching (mesma função nos dois lados), validação e limites.'],
   ['services/matching/server.ts', 'Serviço Cloud Run: só POST /match, JSON validado, CORS restrito, rate limit.'],
   ['src/components/vacancy-matching/useExecution.ts', 'Execução no navegador ou na nuvem, com medição de tempo, bytes e partida a frio.'],
+  ['src/lib/matching/opportunity.ts', 'Mapa de oportunidades: grade de hexágonos e acesso a vagas a partir de cada um.'],
   ['src/lib/matching/data.ts', 'Gerador determinístico de vagas e candidatos; balanço regional.'],
   ['src/lib/matching/matching.test.ts', 'Testes: Hungarian contra força bruta, estabilidade, restrições não compensáveis.'],
   ['src/components/vacancy-matching/VacancyMatchingLab.tsx', 'Interface, ofertas em rodadas, status, compatibilidade e explicações.'],
@@ -114,8 +115,13 @@ const files = [
           marcar aceite ou recusa à mão no ranking.
         </li>
         <li>
-          <strong>Oferta × demanda regional.</strong> Postos presenciais/híbridos localizados em cada região contra
-          candidatos residentes, destacando regiões com vagas sobrando e regiões com candidatos sobrando.
+          <strong>Mapa de oportunidades.</strong> A cidade vira hexágonos de ~0,8 km (todos do mesmo tamanho e com os
+          vizinhos à mesma distância, então a cor compara lugares de forma justa; mar e áreas sem rua ficam de fora). Em
+          <em>acesso a vagas</em>, cada hexágono mostra quantos postos abertos alguém que mora no centro dele alcança no
+          tempo escolhido, pelo mesmo deslocamento do matching (e só com as conduções que cada vaga paga, quando essa regra
+          está ligada). Em <em>sem vaga possível</em>, mostra onde moram as pessoas que não servem para nenhuma vaga pelas
+          regras obrigatórias. Os dois filtram por área de atuação. A tabela por região (postos × moradores nas 6 regiões
+          fixas) continua nos ajustes avançados.
         </li>
       </ol>
     </details>

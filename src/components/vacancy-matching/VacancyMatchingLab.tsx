@@ -5,7 +5,8 @@ import type { CityMap } from '../../lib/city/map';
 import { isTransit, MAX_RIDES, MODE_INFO, tripLegs, type Leg, type TransitMode } from '../../lib/city/transit';
 import { ALGORITHMS, pathsFor, type MatchingRequest } from '../../lib/matching/api';
 import { ALGORITHM_INFO, type Algorithm, type MatchPair } from '../../lib/matching/assignment';
-import { makeCandidate, makeScenario, makeVacancy, regionalBalance, rng, type Scenario } from '../../lib/matching/data';
+import { AREAS, makeCandidate, makeScenario, makeVacancy, regionalBalance, rng, type Scenario } from '../../lib/matching/data';
+import { hexGrid, opportunityMap } from '../../lib/matching/opportunity';
 import { evaluateAll } from '../../lib/matching/engine';
 import {
   CONSTRAINT_LABEL,
@@ -117,7 +118,9 @@ export interface TripOption {
 type OfferState = 'ofertada' | 'aceita' | 'recusada';
 type PersonStatus = 'disponivel' | 'recomendado' | 'ofertada' | 'contratado' | 'recusou';
 type CompatLevel = 'alta' | 'media' | 'baixa' | 'fora';
-type MapView = 'status' | 'compat' | 'region';
+type MapView = 'status' | 'compat' | 'opportunity';
+/** Mapa de oportunidades: acesso a vagas a partir de cada lugar, ou onde moram as pessoas sem vaga possível. */
+type OppMode = 'access' | 'stranded';
 
 /** Ordem = prioridade: o estado mais avançado da pessoa é o que aparece. */
 const STATUS_INFO: Record<PersonStatus, { label: string; color: string; rank: number }> = {
@@ -142,7 +145,6 @@ const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(pr
 /** level: nível dos títulos dos painéis (ver heading.tsx). */
 export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2' | 'h3'; city: CityMap }) {
   const paths = pathsFor(city);
-  const KM = city.km;
   const [seed, setSeed] = useState(7);
   const [scenario, setScenario] = useState<Scenario>(() => makeScenario(7, 12, 40, city));
   const [selection, setSelection] = useState<Selection>(() => initialSelection(scenario, city));
@@ -156,6 +158,9 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
   /** Cliente em foco: só as vagas dele e as pessoas ligadas a elas ficam acesas. */
   const [client, setClient] = useState<string | null>(null);
   const [view, setView] = useState<MapView>('status');
+  const [oppMode, setOppMode] = useState<OppMode>('access');
+  /** Área de atuação filtrada no mapa de oportunidades (null = todas). */
+  const [oppArea, setOppArea] = useState<string | null>(null);
   // De transporte público, só a espera média já passa de 5 minutos: a área começa maior.
   const [areaMin, setAreaMin] = useState(() => (isTransit(city) ? 30 : 15));
   const transitMode = isTransit(city);
@@ -437,6 +442,37 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
   const activeLegs = chosenTrip ? chosenTrip.legs : null;
   const activeCarPath = chosenTrip && !chosenTrip.legs ? chosenTrip.trip.path : null;
 
+  // ---- Mapa de oportunidades (hexágonos). Só calcula com a visão aberta.
+  const hexes = useMemo(() => hexGrid(city), [city]);
+  const opportunity = useMemo(() => {
+    if (view !== 'opportunity') return null;
+    const vs = scenario.vacancies.filter((v) => !oppArea || v.area === oppArea);
+    const cs = scenario.candidates.filter((c) => !oppArea || c.interests.includes(oppArea));
+    const stranded = new Set(cs.filter((c) => !vs.some((v) => evalOf(v.id, c.id).feasible)).map((c) => c.id));
+    const stats = opportunityMap({
+      city,
+      paths,
+      hexes,
+      vacancies: vs,
+      candidates: cs,
+      open: (v) => v.slots - filledOf(offers, v.id),
+      minutes: areaMin,
+      limitFares: isTransit(city) && constraints.fares,
+      stranded,
+    });
+    const value = (i: number) => (oppMode === 'access' ? stats[i].slots : stats[i].stranded);
+    const values = hexes.map((h) => value(h.id));
+    return {
+      stats,
+      stranded,
+      candidates: cs.length,
+      value,
+      max: Math.max(1, ...values),
+      zeroPct: Math.round((100 * values.filter((x) => x === 0).length) / Math.max(1, values.length)),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, oppMode, oppArea, scenario, evalOf, city, paths, hexes, offers, areaMin, constraints.fares]);
+
   const people = useMemo(() => {
     const out = new Map<string, PersonLook>();
     const compat = view === 'compat' && focusVacancy;
@@ -465,12 +501,16 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
         color: compat && level ? COMPAT_INFO[level].color : STATUS_INFO[st].color,
         ring: st === 'ofertada' ? 'offer' : st === 'contratado' ? 'hired' : st === 'recusou' ? 'declined' : undefined,
         tag: top.has(c.id) && e ? pct(e.score) : undefined,
-        dim: (focus !== null && focus !== category) || (client !== null && !clientPeople.has(c.id)),
+        dim:
+          (focus !== null && focus !== category) ||
+          (client !== null && !clientPeople.has(c.id)) ||
+          // Sem vaga por perto: só as pessoas sem nenhuma vaga possível ficam acesas.
+          (opportunity !== null && oppMode === 'stranded' && !opportunity.stranded.has(c.id)),
         summary: parts.join(' · '),
       });
     }
     return out;
-  }, [scenario, status, view, focusVacancy, evalOf, focus, client, clientPeople]);
+  }, [scenario, status, view, focusVacancy, evalOf, focus, client, clientPeople, opportunity, oppMode]);
 
   const vacancyLooks = useMemo(() => {
     const out = new Map<string, VacancyLook>();
@@ -665,25 +705,22 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
             )}
             under={
               <>
-                {view === 'region' &&
-                  balance.map((b) => {
-                    const col = b.region.endsWith('O') ? 0 : 1;
-                    const row = b.region.startsWith('N') ? 0 : b.region.startsWith('C') ? 1 : 2;
-                    const x = col === 0 ? 0 : city.splitX;
-                    const w = col === 0 ? city.splitX : KM - city.splitX;
-                    const fill = b.ratio > 1.3 ? 'var(--info)' : b.ratio < 0.7 ? 'var(--signal)' : 'transparent';
+                {opportunity &&
+                  hexes.map((hx) => {
+                    const st = opportunity.stats[hx.id];
                     return (
-                      <g key={b.region}>
-                        <rect x={x} y={(row * KM) / 3} width={w} height={KM / 3} style={{ fill }} opacity={0.14} className="tm-region" />
-                        <text x={x + 0.15} y={(row * KM) / 3 + 0.4} className="vm-region-label">
-                          {REGIONS[b.region]} · {b.slots} postos / {b.candidates} pessoas
-                        </text>
-                      </g>
+                      <polygon key={hx.id} points={pts(hx.pts)} className={`tm-hex ${oppMode}`} style={{ ['--t' as string]: opportunity.value(hx.id) / opportunity.max }}>
+                        <title>
+                          {oppMode === 'access'
+                            ? `Morando aqui: ${st.slots} posto(s) em ${st.vacancies.length} vaga(s) a até ${areaMin} min`
+                            : `${st.stranded} de ${st.residents} pessoa(s) que moram aqui sem nenhuma vaga possível`}
+                        </title>
+                      </polygon>
                     );
                   })}
                 {layers.transit &&
                   transitPaths.map((t) => <path key={t.mode} d={t.d} className={`tm-transit ${t.rail ? 'rail' : 'bus'}`} style={{ stroke: MODE_COLOR[t.mode] }} />)}
-                {view !== 'region' && area && <path key={`${focusVacancy?.id}-${areaMin}`} d={area.d} className="tm-area" />}
+                {view !== 'opportunity' && area && <path key={`${focusVacancy?.id}-${areaMin}`} d={area.d} className="tm-area" />}
                 {layers.reach && reach && <path d={reach} className="vm-reach" />}
                 {layers.matches &&
                   view !== 'compat' &&
@@ -734,7 +771,7 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
             panel={
               <>
                 <p className="tm-panel-title">
-                  {client ? `Cliente · ${client}` : view === 'compat' && focusVacancy ? `Compatibilidade · ${focusVacancy.company}` : view === 'region' ? 'Oferta × demanda' : 'Pessoas no território'}
+                  {client ? `Cliente · ${client}` : view === 'compat' && focusVacancy ? `Compatibilidade · ${focusVacancy.company}` : view === 'opportunity' ? 'Mapa de oportunidades' : 'Pessoas no território'}
                 </p>
                 <div className="tm-progress" title="Postos preenchidos por ofertas aceitas">
                   <span>Postos preenchidos</span>
@@ -752,7 +789,7 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
                     );
                   })()}
                 </div>
-                {view !== 'region' ? (
+                {view !== 'opportunity' ? (
                   <ul className="tm-legend">
                     {legend.map((l) => (
                       <li key={l.key}>
@@ -765,12 +802,55 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
                     ))}
                   </ul>
                 ) : (
-                  <ul className="tm-legend static">
-                    <li><span><i style={{ background: 'var(--info)' }} /> muitas vagas, poucas pessoas</span></li>
-                    <li><span><i style={{ background: 'var(--signal)' }} /> muitas pessoas, poucas vagas</span></li>
-                  </ul>
+                  opportunity && (
+                    <div className="tm-opp">
+                      <div className="tm-opp-modes" role="radiogroup" aria-label="O que os hexágonos mostram">
+                        {(
+                          [
+                            ['access', 'Acesso a vagas'],
+                            ['stranded', 'Sem vaga possível'],
+                          ] as const
+                        ).map(([k, label]) => (
+                          <button key={k} type="button" role="radio" aria-checked={oppMode === k} onClick={() => setOppMode(k)}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <label className="tm-opp-area">
+                        <span>Área</span>
+                        <select value={oppArea ?? ''} onChange={(e) => setOppArea(e.target.value || null)}>
+                          <option value="">todas</option>
+                          {Object.keys(AREAS).map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className={`tm-scale ${oppMode}`} aria-hidden>
+                        <span>0</span>
+                        <i />
+                        <span>{opportunity.max}</span>
+                      </div>
+                      {oppMode === 'access' ? (
+                        <>
+                          <p>
+                            Cada hexágono: quantos postos abertos alguém que mora ali alcança em até <strong>{areaMin} min</strong>
+                            {isTransit(city) && constraints.fares ? ', com as conduções que cada vaga paga' : ''}. No melhor lugar,{' '}
+                            <strong>{opportunity.max}</strong>; em <strong>{opportunity.zeroPct}%</strong> da cidade, nenhum.
+                          </p>
+                          <input type="range" min={5} max={90} step={5} value={areaMin} aria-label="Tempo de viagem" aria-valuetext={`${areaMin} minutos`} onChange={(e) => setAreaMin(Number(e.target.value))} />
+                        </>
+                      ) : (
+                        <p>
+                          <strong>{opportunity.stranded.size}</strong> de {opportunity.candidates} pessoas{oppArea ? ` interessadas em ${oppArea}` : ''} não servem para
+                          nenhuma vaga{oppArea ? ' da área' : ''} pelas regras obrigatórias. Os hexágonos mostram onde elas moram; as outras pessoas ficam apagadas.
+                        </p>
+                      )}
+                    </div>
+                  )
                 )}
-                {area && focusVacancy && view !== 'region' && (
+                {area && focusVacancy && view !== 'opportunity' && (
                   <div className="tm-area-box">
                     <p>
                       <strong>{area.inside.length}</strong> pessoas a até <strong>{areaMin} min</strong> de {focusVacancy.company}
@@ -786,7 +866,7 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
                   [
                     ['status', 'Status'],
                     ['compat', 'Compatibilidade'],
-                    ['region', 'Região'],
+                    ['opportunity', 'Oportunidades'],
                   ] as const
                 ).map(([k, label]) => (
                   <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => changeView(k)}>
