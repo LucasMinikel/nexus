@@ -13,9 +13,9 @@ Cada projeto é uma demonstração funcional com parâmetros manipuláveis, visu
 
 ## Rodar
 
-O projeto de documentos usa o [doc-check](../doc-check), um repositório irmão ligado por caminho local
-(`"doc-check": "file:../doc-check"`): antes do `npm install`, ele precisa estar ao lado desta pasta. Ainda não está
-no GitHub, então o build na CI e o deploy não funcionam até a dependência virar `github:LucasMinikel/doc-check#<versão>`.
+O projeto de documentos usa o [doc-check](https://github.com/LucasMinikel/doc-check) por tag do GitHub
+(`github:LucasMinikel/doc-check#v0.1.0`). Para mudar o doc-check: nova tag lá e `npm i github:LucasMinikel/doc-check#<tag>`
+aqui. Para desenvolver os dois juntos, `npm i ../doc-check` liga a pasta local (sem commitar essa troca).
 
 ```sh
 npm install

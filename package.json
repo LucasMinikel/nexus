@@ -14,7 +14,7 @@
   "dependencies": {
     "@astrojs/react": "^7.1.9",
     "astro": "^7.4.12",
-    "doc-check": "file:../doc-check",
+    "doc-check": "github:LucasMinikel/doc-check#v0.1.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "three": "^0.187.0"

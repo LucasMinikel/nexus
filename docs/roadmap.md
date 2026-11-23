@@ -30,7 +30,7 @@ Prioridade: experiências em que o visitante observa agentes e algoritmos tomand
 | ⬜ | Comparador de rotas | 2.2 Route Optimization & Pathfinding | navegador |
 | ✅ | Motor de correspondência geográfica → implementado dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) | 2.3 Geospatial Matching Engine | navegador |
 | ✅ | [Vagas e Candidatos](../src/pages/projetos/vagas.astro) | 2.4 Vacancy & Candidate Matching | navegador |
-| ✅ | [Foto de documento](../src/pages/projetos/documentos.astro): verificação da foto antes do envio, do projeto doc-check (dependência local `file:../doc-check`; falta publicar no GitHub para a CI e o deploy) | Computer Vision & Document Intelligence | navegador |
+| ✅ | [Foto de documento](../src/pages/projetos/documentos.astro): verificação da foto antes do envio, do projeto doc-check (dependência `github:LucasMinikel/doc-check#v0.1.0`) | Computer Vision & Document Intelligence | navegador |
 | ⬜ | Living Geographic World | 3.1 Spatial Simulation | navegador |
 | ⬜ | NEXUS Mobile | 4.1 Mobile App Development | navegador |
 | ⬜ | Sincronização offline | 4.1 Mobile App Development | navegador |
