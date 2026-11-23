@@ -1,0 +1,65 @@
+---
+/**
+ * Abertura das páginas internas: número da seção no trilho, título em display,
+ * uma frase e perguntas prontas que abrem o console (a porta para quem não digita).
+ */
+interface Props {
+  /** Número da seção no menu, ex.: "01". */
+  index: string;
+  section: string;
+  title: string;
+  lead?: string;
+  /** Perguntas sugeridas; cada uma abre o console já com ela. */
+  ask?: string[];
+}
+const { index, section, title, lead, ask = [] } = Astro.props;
+---
+<header class="page-head">
+  <p class="rail"><span>{index}</span>{section}</p>
+  <div class="body">
+    <h1>{title}</h1>
+    {lead && <p class="lead">{lead}</p>}
+    <slot />
+    {ask.length > 0 && (
+      <div class="asks">
+        <span class="label">Pergunte ao núcleo</span>
+        {ask.map((q) => <button type="button" class="ask" data-ask={q}>{q}</button>)}
+      </div>
+    )}
+  </div>
+</header>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.page-head .ask').forEach((b) =>
+    b.addEventListener('click', () => dispatchEvent(new CustomEvent('nexus:ask', { detail: b.dataset.ask }))),
+  );
+</script>
+
+<style>
+  .page-head { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); gap: var(--s-5); padding: var(--s-7) 0 var(--s-7); border-bottom: 1px solid var(--line); }
+  .rail { margin: 0; display: grid; gap: var(--s-1); align-content: start; padding-top: 0.6rem; font: 600 var(--t-xs)/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+  .rail span { font-size: var(--t-lg); color: var(--signal); letter-spacing: 0; }
+  h1 { font-size: var(--t-display); line-height: 0.92; letter-spacing: -0.045em; margin: 0; max-width: 18ch; }
+  .lead { color: var(--text-2); font-size: var(--t-lg); line-height: 1.45; max-width: 36rem; margin: var(--s-5) 0 0; }
+  .asks { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); margin-top: var(--s-5); }
+  .asks .label { margin-right: var(--s-2); }
+  .ask {
+    min-height: 36px;
+    padding: 0 var(--s-3);
+    font: 400 var(--t-sm)/1 var(--font-mono);
+    color: var(--text);
+    background: none;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color var(--d-fast), color var(--d-fast);
+  }
+  .ask::before { content: '› '; color: var(--signal); }
+  .ask:hover { border-color: var(--signal); color: var(--signal); }
+  @media (max-width: 720px) {
+    .page-head { grid-template-columns: 1fr; gap: var(--s-3); padding-block: var(--s-6); }
+    .rail { display: flex; gap: var(--s-2); align-items: baseline; padding: 0; }
+    .rail span { font-size: var(--t-sm); }
+    .ask { min-height: var(--hit); }
+  }
+</style>

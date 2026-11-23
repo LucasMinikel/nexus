@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/hud/PageHead.astro';
+import DocCheckDemo from '../../components/doc-check/DocCheckDemo';
+// A documentação vem do próprio doc-check, renderizada no build (HTML estático, sem JavaScript).
+import HowItWorks from 'doc-check/docs';
+---
+<Base title="Foto de documento" description="A foto do documento conferida no navegador antes do envio: enquadramento, nitidez, luz, reflexo, resolução e orientação.">
+  <PageHead
+    index="02"
+    section="Projetos / 02"
+    title="Foto de documento"
+    lead="Antes de enviar, o navegador acha o documento na foto, endireita, confere se dá para ler e diz o que corrigir. A imagem não sai do aparelho."
+    ask={['documento', 'caminho do núcleo até documentos']}
+  />
+
+  <!-- client:only: câmera, canvas e Web Worker não existem no build estático. -->
+  <DocCheckDemo client:only="react" />
+
+  <div class="doc">
+    <p class="muted small">
+      O verificador é um projeto à parte, <code>doc-check</code>, usado aqui como dependência; os caminhos abaixo são
+      dele.
+    </p>
+    <HowItWorks />
+  </div>
+</Base>
+
+<style>
+  /* Documentação: mesma leitura longa da página de vagas, alinhada ao trilho das aberturas. */
+  .doc { margin-top: var(--s-7); padding-left: calc(var(--rail) + var(--s-5)); }
+  .doc :global(:is(ol, ul)) { max-width: 42rem; padding-left: 1.2rem; }
+  .doc :global(li) { margin-bottom: var(--s-3); line-height: 1.65; color: var(--text-2); }
+  .doc :global(li strong) { color: var(--text); }
+  .doc :global(li::marker) { color: var(--text-3); font-family: var(--font-mono); font-size: var(--t-sm); }
+  .doc :global(code) { color: var(--text); }
+  .doc :global(details) { border-top: 1px solid var(--line); }
+  .doc :global(details:last-child) { border-bottom: 1px solid var(--line); }
+  .doc :global(details[open]) { padding-bottom: var(--s-5); }
+  .doc :global(summary) { display: flex; align-items: baseline; gap: var(--s-4); flex-wrap: wrap; min-height: var(--hit); padding-block: var(--s-4); cursor: pointer; list-style: none; }
+  .doc :global(summary::-webkit-details-marker) { display: none; }
+  .doc :global(summary::before) { content: '+'; font: 600 var(--t-lg)/1 var(--font-mono); color: var(--signal); width: 1rem; transition: transform var(--d-fast) var(--ease); }
+  .doc :global(details[open] summary::before) { transform: rotate(45deg); }
+  .doc :global(summary h2) { margin: 0; font-size: var(--t-xl); }
+  .doc :global(summary span) { color: var(--text-3); font-size: var(--t-sm); }
+  .doc :global(summary:hover h2) { color: var(--signal); }
+  .doc :global(.demo-files) { list-style: none; padding: 0 !important; }
+  .doc :global(.demo-files li) { display: grid; gap: var(--s-1); }
+  .doc :global(.demo-files code) { font-family: var(--font-mono); font-size: var(--t-sm); }
+  @media (max-width: 720px) {
+    .doc { padding-left: 0; }
+  }
+</style>

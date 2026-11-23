@@ -1,0 +1,38 @@
+/* Demo do verificador de documento: controles no padrão do sistema (fio, 36 px, mono nos números). */
+.dcd { display: flex; flex-direction: column; gap: var(--s-4); }
+
+.dcd-steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin: 0; padding: 0; }
+.dcd-steps li { counter-increment: step; display: grid; grid-template-columns: 2.2rem 1fr; column-gap: var(--s-3); align-items: start; padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--ink-1); }
+.dcd-steps li::before {
+  content: counter(step);
+  grid-row: span 2;
+  display: grid; place-items: center;
+  width: 2.2rem; height: 2.2rem; border-radius: 50%;
+  background: var(--sunset); color: var(--ink-0);
+  font: italic 700 1.15rem/1 var(--font-display);
+}
+.dcd-steps strong { font: italic 700 1rem/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; }
+.dcd-steps span { font-size: var(--t-sm); color: var(--text-2); }
+@media (max-width: 720px) {
+  .dcd-steps { grid-template-columns: 1fr; }
+}
+
+/* min-width: 0 — um fieldset cresce até caber o conteúdo (a caixa de código), passando da tela no celular. */
+.dcd-controls { display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); align-items: center; margin: 0; min-width: 0; }
+.dcd-controls legend { padding: 0 var(--s-2); font: 600 var(--t-xs)/1 var(--font-mono); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+.dcd-group { display: flex; align-items: center; gap: var(--s-1); flex-wrap: wrap; }
+.dcd-label { margin-right: var(--s-2); font-size: var(--t-sm); color: var(--text-3); }
+.dcd-group label { display: inline-flex; align-items: center; min-height: 36px; padding: 0 var(--s-3); font-size: var(--t-sm); border: 1px solid var(--line-strong); border-radius: var(--radius); cursor: pointer; transition: border-color var(--d-fast), color var(--d-fast); }
+.dcd-group label:hover { border-color: var(--signal); }
+.dcd-group label.on { border-color: var(--signal); color: var(--signal); }
+.dcd-group label:focus-within { outline: 2px solid var(--signal); outline-offset: 2px; }
+.dcd-group input { position: absolute; opacity: 0; pointer-events: none; }
+.dcd-policy .dcd-group label.on.block { border-color: var(--bad); color: var(--bad); }
+.dcd-policy .dcd-group label.on.off { border-color: var(--line-strong); color: var(--text-3); }
+.dcd-reset { margin-left: auto; min-height: 36px; padding: 0 var(--s-3); background: none; color: var(--text-2); border: 1px solid transparent; cursor: pointer; font: inherit; font-size: var(--t-sm); }
+.dcd-reset:hover { color: var(--signal); }
+.dcd-snippet { flex-basis: 100%; margin: var(--s-1) 0 0; padding: var(--s-3) var(--s-4); font: var(--t-sm)/1.5 var(--font-mono); color: var(--text); background: var(--ink-0); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; }
+.dcd-log { margin: 0; font: var(--t-sm)/1.4 var(--font-mono); color: var(--text-2); }
+@media (max-width: 720px) {
+  .dcd-group label { min-height: var(--hit); }
+}

@@ -1,0 +1,45 @@
+---
+/**
+ * Retrato do verificador de documento na home: um documento fictício fotografado de lado,
+ * o contorno achado e o resultado das verificações. Desenho estático, sem JavaScript.
+ */
+const lines = [3.8, 2.6, 3.3, 2.1, 3.6, 2.9];
+const checks = [
+  { label: 'Enquadramento', ok: true },
+  { label: 'Nitidez', ok: true },
+  { label: 'Iluminação', ok: true },
+  { label: 'Reflexo', ok: false },
+];
+---
+<figure class="snap" aria-hidden="true">
+  <svg viewBox="0 0 10 10">
+    <g transform="rotate(-8 5 4.4)">
+      <rect x="1.6" y="2.1" width="6.8" height="4.3" rx="0.25" class="card" />
+      <rect x="2.0" y="2.6" width="1.6" height="2.0" rx="0.1" class="photo" />
+      {lines.map((w, i) => <rect x="3.9" y={2.8 + i * 0.55} width={w} height="0.22" class="ink" />)}
+      <ellipse cx="6.9" cy="3.0" rx="0.75" ry="0.45" class="glare" />
+      <rect x="1.45" y="1.95" width="7.1" height="4.6" rx="0.3" class="found" />
+    </g>
+    {checks.map((c, i) => (
+      <g transform={`translate(${0.8 + (i % 2) * 4.6} ${8 + Math.floor(i / 2) * 0.95})`}>
+        <circle r="0.24" cx="0.24" class:list={[c.ok ? 'ok' : 'warn']} />
+        <text x="0.7" y="0.15">{c.label}</text>
+      </g>
+    ))}
+  </svg>
+  <figcaption>documento fictício · achado, endireitado e conferido no aparelho</figcaption>
+</figure>
+
+<style>
+  .snap { margin: 0; }
+  svg { display: block; width: 100%; height: auto; background: var(--ink-1); border: 1px solid var(--line); transition: border-color var(--d-med); }
+  figcaption { margin-top: var(--s-2); font: var(--t-xs)/1.4 var(--font-mono); color: var(--text-3); }
+  .card { fill: #e4e2d8; }
+  .photo { fill: #b9b3a6; }
+  .ink { fill: #4a4540; }
+  .glare { fill: #fff; opacity: 0.85; stroke: var(--sun); stroke-width: 0.06; }
+  .found { fill: none; stroke: var(--ok); stroke-width: 0.08; stroke-dasharray: 0.5 0.25; }
+  .ok { fill: var(--ok); }
+  .warn { fill: var(--sun); }
+  text { font: 0.42px var(--font-mono); fill: var(--text-2); }
+</style>

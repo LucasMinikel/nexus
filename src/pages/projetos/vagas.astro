@@ -1,0 +1,202 @@
+---
+import Base from '../../layouts/Base.astro';
+import VacancyMatching from '../../components/vacancy-matching/VacancyMatching';
+import { SPEED_KMH } from '../../lib/city/city';
+import { CLASS_LABEL, CLASS_SPEED_KMH } from '../../lib/city/map';
+import { MODE_INFO } from '../../lib/city/transit';
+import PageHead from '../../components/hud/PageHead.astro';
+
+const repo = 'https://github.com/LucasMinikel/nexus/blob/main/';
+const files = [
+  ['scripts/maps/fetch.mjs', 'Download único das ruas e da água de cada capital no OpenStreetMap (Overpass).'],
+  ['scripts/maps/build.mjs', 'Ruas → grafo: cruzamentos, maior componente, geometria simplificada, polos de emprego.'],
+  ['src/lib/city/map.ts', 'Cidade real carregada do arquivo, índice espacial, cidade mais próxima (haversine).'],
+  ['src/lib/city/city.ts', 'Dijkstra com heap binário (separado por número de conduções no transporte público), deslocamento porta a porta, regiões.'],
+  ['src/lib/city/transit.ts', 'Rede de transporte público: caminhada + linhas, espera por embarque, trajeto em trechos.'],
+  ['scripts/maps/fetch-transit.mjs', 'Download único das linhas de transporte (rotas, paradas e trajetos) no OpenStreetMap.'],
+  ['src/components/vacancy-matching/VacancyMatching.tsx', 'Escolha da cidade: lista ou “usar minha região” (a localização fica no navegador).'],
+  ['src/lib/matching/score.ts', 'Restrições obrigatórias (inclusive conduções pagas), score por dimensão e contribuições.'],
+  ['src/lib/matching/assignment.ts', 'Greedy, Hungarian (potenciais, O(n³)), Gale–Shapley com capacidade, pares bloqueantes.'],
+  ['src/lib/matching/api.ts', 'Contrato navegador ↔ Cloud Run: runMatching (mesma função nos dois lados), validação e limites.'],
+  ['services/matching/server.ts', 'Serviço Cloud Run: só POST /match, JSON validado, CORS restrito, rate limit.'],
+  ['src/components/vacancy-matching/useExecution.ts', 'Execução no navegador ou na nuvem, com medição de tempo, bytes e partida a frio.'],
+  ['src/lib/matching/data.ts', 'Gerador determinístico de vagas e candidatos; balanço regional.'],
+  ['src/lib/matching/matching.test.ts', 'Testes: Hungarian contra força bruta, estabilidade, restrições não compensáveis.'],
+  ['src/components/vacancy-matching/VacancyMatchingLab.tsx', 'Interface, ofertas em rodadas, status, compatibilidade e explicações.'],
+  ['src/components/vacancy-matching/TerritoryMap.tsx', 'Mapa “território”: avatares, etiquetas sem sobreposição, zoom, arrastar e animações.'],
+];
+---
+<Base title="Vagas e Candidatos" description="Correspondência geográfica e profissional entre vagas e candidatos, com score explicável e comparação de algoritmos.">
+  <PageHead index="02" section="Projetos / 01" title="Vagas e Candidatos" lead="Escolha uma vaga no mapa e veja quem combina com ela: curso, turnos, tempo de viagem e quantas conduções a pessoa precisa. Depois, oferte a vaga e acompanhe as respostas." ask={['rode o matching 42', 'caminho do núcleo até vagas']} />
+
+  <VacancyMatching client:load level="h2" />
+
+  <div class="doc">
+    <details>
+      <summary><h2>Como funciona</h2><span>filtros, rede viária, score e três algoritmos</span></summary>
+      <ol>
+        <li>
+          <strong>Restrições obrigatórias como filtro.</strong> Modalidade, curso aceito, cobertura de turnos, tempo máximo de
+          deslocamento e conduções pagas eliminam o par antes de qualquer pontuação. Um score alto em competências nunca compensa uma restrição
+          violada. Desligar uma restrição a transforma em critério apenas pontuado.
+        </li>
+        <li>
+          <strong>Mapa real da cidade.</strong> As ruas de um quadrado de 10 × 10 km no centro de cada capital vêm do
+          OpenStreetMap, baixadas uma única vez e embutidas no site: na visita, nada sai do navegador. “Usar minha região”
+          pede a localização ao navegador e abre a capital mais próxima; a posição é comparada ali mesmo e não é enviada.
+        </li>
+        <li>
+          <strong>Deslocamento pela rede, não em linha reta.</strong> Cada trecho de rua vale o comprimento real dividido pela
+          velocidade média da classe da via ({CLASS_LABEL.map((l, i) => `${l.toLowerCase()} ${CLASS_SPEED_KMH[i]}`).join(', ')} km/h).
+          O tempo é caminhada até a esquina mais próxima ({SPEED_KMH.walk} km/h) + caminho mínimo por Dijkstra + caminhada até
+          o destino. A rota desenhada segue a forma das ruas; a interface mostra as duas distâncias lado a lado.
+        </li>
+        <li>
+          <strong>Score explicável.</strong>
+          <code>Score = Σ wᵢ·sᵢ / Σ wᵢ</code>, com cada dimensão sᵢ ∈ [0, 1]:
+          <ul>
+            <li><em>Geográfica</em>: 1 − tempo/tempo máximo do candidato (híbrido conta metade; remoto = 1).</li>
+            <li><em>Profissional</em>: fração das competências exigidas que o candidato possui.</li>
+            <li><em>Educacional</em>: 1 para o curso principal, 0,7 para curso aceito, 0 caso contrário.</li>
+            <li><em>Horário</em>: fração dos turnos da vaga cobertos pela disponibilidade.</li>
+            <li><em>Preferências</em>: média entre região preferida, bolsa em relação à desejada e interesse na área.</li>
+          </ul>
+          Cada linha do ranking mostra a contribuição de cada dimensão e o motivo do valor.
+        </li>
+        <li>
+          <strong>Distribuição entre vagas.</strong> Três algoritmos alocam candidatos aos postos e são comparados nas mesmas
+          métricas:
+          <ul>
+            <li><em>Greedy</em> aceita o melhor par livre a cada passo.</li>
+            <li><em>Hungarian</em> maximiza a soma dos scores (matching bipartido de peso máximo).</li>
+            <li>
+              <em>Gale–Shapley</em> gera uma alocação estável: candidatos ordenam vagas por geografia e preferências, vagas
+              ordenam candidatos por competências, formação e horário. A coluna “pares bloqueantes” mostra por que o ótimo de
+              score não é necessariamente estável.
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong>Transporte público.</strong> As linhas de ônibus, metrô, trem e VLT também vêm do OpenStreetMap. Como poucas
+          paradas de ônibus estão mapeadas, o trajeto real de cada linha ganha um ponto de embarque a cada 400 m; nos trilhos,
+          só valem as estações. A viagem soma caminhada até o ponto, espera média, tempo no veículo, nova espera a cada
+          baldeação e caminhada até a vaga, e o Dijkstra escolhe a melhor combinação (andar a pé também é uma opção). Sem
+          horários no OSM, espera e velocidade são médias por modo: {Object.values(MODE_INFO).filter((m, i, a) => a.findIndex((x) => x.label === m.label) === i).map((m) => `${m.label.toLowerCase()} ${m.speedKmh} km/h, espera ${m.waitMin} min`).join('; ')}.
+          Nas capitais com menos de 40 trechos de linha no OSM, só o modo carro fica disponível: com tão poucas linhas,
+          quase toda viagem sairia a pé e o resultado enganaria.
+        </li>
+        <li>
+          <strong>Conduções (vale-transporte).</strong> Cada vaga diz quantas conduções paga por dia (2, 4 ou 6: metade na
+          ida, metade na volta), e cada embarque num ônibus, metrô ou trem conta uma. O Dijkstra guarda o melhor tempo para
+          cada número de conduções (0 a 3 por sentido), então dá para perguntar “quanto demora usando no máximo 2?”. O
+          candidato <em>precisa</em> do menor número com que chega dentro do tempo máximo dele, contado ida e volta. Se
+          precisa de mais do que a vaga paga, a regra obrigatória tira o par e diz o motivo; com a regra ligada, o tempo
+          mostrado é o da viagem usando só as conduções pagas. De carro, conduções não se aplicam.
+        </li>
+        <li>
+          <strong>Clientes com várias vagas.</strong> Cada vaga tem o próprio perfil (cursos, competências, turnos, postos) e é
+          calculada sozinha; uma empresa pode ter vagas diferentes para públicos diferentes. A tabela de clientes soma as vagas
+          de cada empresa, e focar num cliente apaga o resto do mapa. Vagas no mesmo endereço aparecem lado a lado.
+        </li>
+        <li>
+          <strong>Território.</strong> Cada pessoa é um avatar no mapa, colorido por <em>status</em> (disponível, recomendada
+          pelo algoritmo, oferta enviada, contratada, recusou) ou, com uma vaga em foco, por <em>compatibilidade</em> (alta,
+          média, baixa, fora dos requisitos). A etiqueta de cada vaga mostra os postos já preenchidos. “Pessoas na área” acende
+          as ruas alcançáveis a partir da vaga no tempo escolhido e conta quem mora dentro dele. A legenda filtra o mapa.
+        </li>
+        <li>
+          <strong>Ofertas em rodadas.</strong> “Ofertar vagas abertas” envia uma oferta por posto aberto: primeiro aos pares
+          recomendados, depois ao melhor candidato viável ainda livre. Ninguém recebe duas ofertas ao mesmo tempo nem é
+          contratado duas vezes, e vaga cheia não recebe oferta. “Simular respostas” decide cada oferta com chance de aceite
+          de 20% + 60% do score, num sorteio fixo por cenário (o mesmo cenário dá sempre as mesmas respostas). Também dá para
+          marcar aceite ou recusa à mão no ranking.
+        </li>
+        <li>
+          <strong>Oferta × demanda regional.</strong> Postos presenciais/híbridos localizados em cada região contra
+          candidatos residentes, destacando regiões com vagas sobrando e regiões com candidatos sobrando.
+        </li>
+      </ol>
+    </details>
+
+    <details>
+      <summary><h2>Implementação</h2><span>onde está cada parte do código</span></summary>
+      <p class="muted">
+        Por padrão, tudo roda no navegador do visitante, com custo de servidor zero. A opção “Google Cloud Run” envia o cenário
+        para um serviço que executa exatamente a mesma função e mostra tempos, bytes trafegados, partida a frio e se o resultado
+        coincide com o do navegador.
+      </p>
+      <ul class="files">
+        {files.map(([path, desc]) => (
+          <li><a href={repo + path}>{path}</a><span class="muted">{desc}</span></li>
+        ))}
+      </ul>
+    </details>
+
+    <details>
+      <summary><h2>Limitações</h2><span>o que este modelo não representa</span></summary>
+      <ul>
+        <li>
+          As ruas são reais; as vagas e os candidatos são <strong>sintéticos</strong>, sorteados perto das ruas e
+          concentrados nos trechos com mais vias arteriais. Nenhum dado pessoal real é usado.
+        </li>
+        <li>
+          O tempo de deslocamento é uma <strong>estimativa</strong>. De carro: velocidade média por tipo de via, sem trânsito,
+          semáforos ou mão única. De transporte público: sem horários reais, com espera média por modo, pontos de ônibus
+          aproximados e linhas tão completas quanto o OpenStreetMap da cidade. Para produção, o carro deve vir de um serviço
+          de roteamento (OSRM, Valhalla, GraphHopper) e o transporte público do feed GTFS oficial da cidade.
+        </li>
+        <li>
+          Conduções: cada embarque conta uma, sem integração tarifária (bilhete único, baldeação gratuita no metrô) e
+          supondo a volta igual à ida. Com integração, alguns candidatos precisariam de menos conduções do que o mostrado.
+        </li>
+        <li>
+          O mapa cobre só os 10 × 10 km centrais de cada uma das 27 capitais. Quem mora fora delas recebe a capital mais
+          próxima, não a própria cidade; outra cidade exige rodar de novo os scripts de <code>scripts/maps</code>.
+          Ruas: © colaboradores do OpenStreetMap, licença ODbL.
+        </li>
+        <li>
+          Os pesos e as fórmulas de cada dimensão são escolhas de modelagem, não verdades. Uma aplicação real precisa validar os
+          critérios com quem usa o sistema e auditar vieses, como penalizar quem mora em regiões periféricas.
+        </li>
+        <li>
+          O Hungarian é O(n³) sobre postos × candidatos: adequado a centenas de entidades no navegador. Para milhares,
+          seria preciso pré-filtrar candidatos (top-K por região/índice espacial) ou usar solvers de fluxo de custo mínimo.
+        </li>
+        <li>
+          No modo Cloud Run, o tempo de ida e volta inclui a rede até a região do serviço e, na primeira chamada após inatividade,
+          a partida a frio. Para um cálculo deste tamanho, o navegador é mais rápido: a nuvem compensa quando o cálculo é pesado
+          demais para o dispositivo do visitante.
+        </li>
+        <li>
+          A estabilidade de Gale–Shapley depende das utilidades definidas para cada lado; com outras utilidades, a alocação
+          estável muda.
+        </li>
+      </ul>
+    </details>
+  </div>
+</Base>
+
+<style>
+  /* Documentação: leitura longa em coluna de ~70 caracteres, alinhada ao trilho das aberturas. */
+  .doc { margin-top: var(--s-7); padding-left: calc(var(--rail) + var(--s-5)); }
+  .doc :is(ol, ul) { max-width: 42rem; padding-left: 1.2rem; }
+  .doc li { margin-bottom: var(--s-3); line-height: 1.65; }
+  .doc li::marker { color: var(--text-3); font-family: var(--font-mono); font-size: var(--t-sm); }
+  .doc code { color: var(--text); }
+  details { border-top: 1px solid var(--line); }
+  details:last-child { border-bottom: 1px solid var(--line); }
+  details[open] { padding-bottom: var(--s-5); }
+  summary { display: flex; align-items: baseline; gap: var(--s-4); flex-wrap: wrap; min-height: var(--hit); padding-block: var(--s-4); cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '+'; font: 600 var(--t-lg)/1 var(--font-mono); color: var(--signal); width: 1rem; transition: transform var(--d-fast) var(--ease); }
+  details[open] summary::before { transform: rotate(45deg); }
+  summary h2 { margin: 0; font-size: var(--t-xl); }
+  summary span { color: var(--text-3); font-size: var(--t-sm); }
+  summary:hover h2 { color: var(--signal); }
+  .files { list-style: none; padding: 0 !important; }
+  .files li { display: grid; gap: var(--s-1); }
+  .files a { font-family: var(--font-mono); font-size: var(--t-sm); }
+  @media (max-width: 720px) {
+    .doc { padding-left: 0; }
+  }
+</style>

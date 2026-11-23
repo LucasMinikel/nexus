@@ -1,0 +1,96 @@
+/* Testes do Lab: hipótese em destaque, gráfico ao vivo, veredito calculado. */
+/*
+ * Teste do Lab como ficha de bancada: número no trilho, hipótese em display,
+ * veredito carimbado quando os números assentam. O corpo é sempre o gráfico.
+ */
+.lt {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  gap: 0 var(--s-5);
+  padding-block: var(--s-7) var(--s-6);
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 72px;
+}
+.lt > * { grid-column: 2; }
+.lt > .lt-index { grid-column: 1; grid-row: 1; margin: 0; padding-top: 0.35rem; display: grid; align-content: start; gap: var(--s-1); font: 600 var(--t-xs)/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+.lt-index b { font-size: var(--t-lg); color: var(--signal); letter-spacing: 0; }
+.lt-head { grid-row: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--s-3) var(--s-5); margin-bottom: var(--s-6); }
+.lt-hyp { margin: 0; font-size: var(--t-xl); line-height: 1.15; max-width: 30ch; }
+.lt-verdict {
+  font: 700 var(--t-xs)/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line-strong);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+/* O carimbo aparece quando o veredito assenta: a mudança de estado é a notícia. */
+.lt-verdict.confirmada, .lt-verdict.refutada { color: var(--signal-ink); animation: lt-stamp var(--d-slow) var(--ease); }
+.lt-verdict.confirmada { background: var(--ok); border-color: var(--ok); }
+.lt-verdict.refutada { background: var(--bad); border-color: var(--bad); }
+@keyframes lt-stamp { from { transform: scale(1.25); opacity: 0; } }
+
+.lt-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 1.6rem; align-items: start; }
+.lt-body.detour { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.lt-side { display: grid; gap: 1.2rem; }
+.lt figure { margin: 0; }
+.lt figcaption { font: 0.74rem/1.5 var(--font-mono); color: var(--text-2); margin-top: 0.4rem; min-height: 2.2em; }
+.lt svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.lt-grid { stroke: rgb(185 139 255 / 0.12); }
+.lt-zero { stroke: var(--ok); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.lt-zone { fill: rgb(63 224 176 / 0.06); }
+.lt-tick { font: 11px var(--font-mono); fill: var(--text-3); }
+.lt-note { font: 11px var(--font-mono); fill: var(--ok); }
+.lt-dot { fill: var(--info); opacity: 0.75; cursor: pointer; transition: r 120ms; }
+.lt-dot.bad { fill: var(--signal); }
+.lt-body.detour .lt-dot.bad { fill: var(--bad); }
+.lt-body.detour .lt-dot.cross:not(.bad) { fill: var(--kind-test); }
+.lt-fit { stroke: var(--text); stroke-width: 1.2; stroke-dasharray: 5 4; opacity: 0.7; }
+
+.lt-map svg { cursor: crosshair; background: var(--ink-1); border: 1px solid var(--line); }
+.lt-street { stroke: var(--line); stroke-width: 0.04; }
+.lt-avenue { stroke: var(--line-strong); stroke-width: 0.09; }
+.lt-river { fill: #1d7f9a; opacity: 0.7; }
+.lt-bridge { fill: var(--text-2); }
+.lt-straight { stroke: var(--text); stroke-width: 0.05; stroke-dasharray: 0.2 0.15; }
+.lt-route { fill: none; stroke: var(--signal); stroke-width: 0.12; stroke-linejoin: round; }
+.lt-pin { fill: var(--info); stroke: var(--ink-0); stroke-width: 0.06; }
+.lt-pin.to { fill: var(--text); }
+.lt-pin.pulse { animation: lt-pulse 1s ease-in-out infinite; }
+@keyframes lt-pulse { 50% { opacity: 0.4; } }
+
+.lt-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--s-4); }
+.lt-stat { display: grid; align-content: start; gap: var(--s-1); padding-left: var(--s-3); border-left: 1px solid var(--line-strong); }
+.lt-stat strong { font: 600 clamp(1.5rem, 2.8vw, 2.2rem)/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.lt-stat span { font-size: var(--t-sm); line-height: 1.35; color: var(--text-2); }
+.lt-stat.hot strong { color: var(--signal); }
+
+.lt-controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s-4); }
+.lt-controls label { display: grid; gap: var(--s-2); font: 600 var(--t-xs)/1 var(--font-mono); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+.lt-controls output { color: var(--text); }
+.lt-controls input[type='range'] { width: 160px; min-height: 28px; }
+
+.lt-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2) var(--s-5); margin-top: var(--s-5); font: var(--t-xs)/1.5 var(--font-mono); color: var(--text-3); }
+.lt-foot code { background: none; padding: 0; }
+
+/* Tablet: gráfico e lateral empilham; o mapa não passa de 460 px para o gráfico caber logo abaixo. */
+@media (max-width: 1023px) {
+  .lt-body, .lt-body.detour { grid-template-columns: 1fr; }
+  .lt-map { max-width: 460px; }
+}
+@media (max-width: 720px) {
+  .lt { grid-template-columns: 1fr; padding-block: var(--s-6) var(--s-5); }
+  .lt > *, .lt > .lt-index { grid-column: 1; grid-row: auto; }
+  .lt > .lt-index { display: flex; align-items: baseline; gap: var(--s-2); padding: 0; margin-bottom: var(--s-2); }
+  .lt-index b { font-size: var(--t-sm); }
+  .lt-head { grid-row: auto; grid-template-columns: 1fr; }
+  .lt-verdict { justify-self: start; }
+  .lt-controls input[type='range'] { width: 100%; min-height: var(--hit); }
+  .lt-controls label { flex: 1 1 140px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lt-pin.pulse { animation: none; }
+  .lt-dot { transition: none; }
+}

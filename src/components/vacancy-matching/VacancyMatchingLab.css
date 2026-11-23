@@ -1,0 +1,387 @@
+/* Projeto Vagas e Candidatos: controles no padrão do sistema (fio, 36 px, mono nos números). */
+.vm { display: flex; flex-direction: column; gap: var(--s-4); }
+.vm :is(h2, h3) { margin-top: 0; font-size: var(--t-lg); }
+.vm .small { font-size: var(--t-sm); }
+.vm button,
+.vm select,
+.vm input[type='number'] {
+  min-height: 36px;
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--text);
+  background: var(--ink-0);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 0 var(--s-3);
+  transition: border-color var(--d-fast), color var(--d-fast);
+}
+.vm button { cursor: pointer; }
+.vm button:hover:not(:disabled) { border-color: var(--signal); }
+.vm button:disabled { opacity: 0.5; cursor: default; }
+.vm button.on { border-color: var(--signal); color: var(--signal); }
+@media (max-width: 720px) {
+  .vm button, .vm select, .vm input[type='number'] { min-height: var(--hit); }
+  .vm .card { padding: var(--s-4) var(--s-3); }
+}
+
+.vm-top { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 1rem; align-items: start; }
+/* Painel da vaga escolhida: acompanha a rolagem ao lado do mapa e rola por dentro. */
+.vm-side { position: sticky; top: 4.5rem; max-height: calc(100vh - 5.5rem); overflow: auto; overscroll-behavior: contain; }
+@media (max-width: 1100px) {
+  .vm-top { grid-template-columns: 1fr; }
+  .vm-side { position: static; max-height: none; }
+}
+
+/* Guia de três passos antes do mapa. */
+.vm-steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin: 0; padding: 0; }
+.vm-steps li { counter-increment: step; display: grid; grid-template-columns: 2.2rem 1fr; column-gap: var(--s-3); align-items: start; padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--ink-1); }
+.vm-steps li::before {
+  content: counter(step);
+  grid-row: span 2;
+  display: grid; place-items: center;
+  width: 2.2rem; height: 2.2rem; border-radius: 50%;
+  background: var(--sunset); color: var(--ink-0);
+  font: italic 700 1.15rem/1 var(--font-display);
+}
+.vm-steps strong { font: italic 700 1rem/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; }
+.vm-steps span { font-size: var(--t-sm); color: var(--text-2); }
+@media (max-width: 720px) {
+  .vm-steps { grid-template-columns: 1fr; }
+}
+
+/* Ajustes avançados: tudo o que é técnico fica recolhido. */
+.vm-advanced { border-top: 1px solid var(--line); }
+.vm-advanced > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-3); padding: var(--s-4) 0; cursor: pointer; list-style: none; }
+.vm-advanced > summary::-webkit-details-marker { display: none; }
+.vm-advanced > summary::before { content: '+'; color: var(--signal); font: 700 1.2rem/1 var(--font-mono); }
+.vm-advanced[open] > summary::before { content: '−'; }
+.vm-adv-title { font: italic 700 1.3rem/1 var(--font-display); text-transform: uppercase; }
+.vm-advanced[open] { display: flex; flex-direction: column; gap: var(--s-4); }
+.vm-adv-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 960px) {
+  .vm-adv-grid { grid-template-columns: 1fr; }
+}
+
+.vm-toolbar, .vm-row, .vm-layers, .vm-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.vm-row { margin-bottom: 0.6rem; }
+.vm-row input[type='number'] { width: 6rem; margin-left: 0.3rem; }
+.vm-layers { margin-top: 0.6rem; font-size: 0.88rem; gap: 1rem; }
+.vm-legend { font-size: 0.8rem; gap: 1rem; margin-top: 0.4rem; }
+.vm-legend i { display: inline-block; vertical-align: middle; margin-right: 0.3rem; }
+.vm-legend .sq { width: 10px; height: 10px; background: var(--kind-test); border-radius: 2px; }
+.vm-legend .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
+.vm-legend .ln.reach { border-top-color: var(--ok); opacity: 0.6; }
+.vm-legend .ln { width: 18px; height: 0; border-top: 2px solid var(--signal); }
+.vm-legend .ln.straight { border-top: 2px dashed var(--text-2); }
+
+.vm-map svg { width: 100%; height: auto; display: block; margin-top: var(--s-3); background: var(--ink-0); border: 1px solid var(--line); }
+.vm-map svg.adding { cursor: crosshair; }
+/* Ruas por classe (0 expressa … 5 compartilhada): espessura e brilho caem com a hierarquia. */
+.vm-road { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.vm-road.c0 { stroke: var(--sun); stroke-width: 0.07; opacity: 0.6; }
+.vm-road.c1 { stroke: var(--text-2); stroke-width: 0.05; opacity: 0.55; }
+.vm-road.c2 { stroke: var(--text-2); stroke-width: 0.035; opacity: 0.4; }
+.vm-road.c3 { stroke: var(--line-strong); stroke-width: 0.03; }
+.vm-road.c4 { stroke: var(--line); stroke-width: 0.02; }
+.vm-road.c5 { stroke: var(--line); stroke-width: 0.012; }
+.vm-water { fill: #1d7f9a; opacity: 0.45; }
+.vm-river { fill: none; stroke: #1d7f9a; stroke-width: 0.08; opacity: 0.7; }
+.vm-coast { fill: none; stroke: var(--info); stroke-width: 0.03; opacity: 0.5; }
+.vm-region-label { font-size: 0.26px; fill: var(--text-2); paint-order: stroke; stroke: var(--ink-0); stroke-width: 0.08px; stroke-linejoin: round; }
+.vm-reach { fill: none; stroke: var(--ok); stroke-width: 0.05; opacity: 0.4; stroke-linecap: round; }
+.vm-match { stroke: var(--info); stroke-width: 0.04; opacity: 0.55; }
+.vm-route { fill: none; stroke: var(--signal); stroke-width: 0.1; stroke-linejoin: round; }
+.vm-straight { stroke: var(--text-2); stroke-width: 0.05; stroke-dasharray: 0.15 0.12; }
+.vm-candidate { fill: var(--ink-1); stroke: var(--ok); stroke-width: 0.06; }
+.vm-candidate.matched { fill: var(--ok); }
+.vm-vacancy { fill: var(--kind-test); stroke: var(--ink-0); stroke-width: 0.04; }
+.vm-vacancy.remoto { fill: transparent; stroke: var(--kind-test); stroke-dasharray: 0.08 0.06; stroke-width: 0.05; }
+.vm-vacancy.hibrido { opacity: 0.75; }
+.vm-candidate.hl, .vm-vacancy.hl { stroke: var(--text); stroke-width: 0.09; }
+/* Ponto do mapa: área de toque invisível maior que o desenho; foco de teclado em rosa. */
+.vm-hit { fill: transparent; }
+.vm-point { cursor: pointer; outline: none; }
+.vm-point:focus-visible .vm-hit { fill: rgb(255 61 139 / 0.2); stroke: var(--signal); stroke-width: 0.06; }
+
+.vm-controls { display: flex; flex-direction: column; }
+.vm-controls :is(h2, h3) { margin: 1rem 0 0.5rem; font-size: 0.95rem; }
+.vm-controls :is(h2, h3):first-child { margin-top: 0; }
+.vm-controls p { margin: 0 0 0.4rem; }
+.vm-slider { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 1.8rem; gap: var(--s-2); align-items: center; font-size: var(--t-sm); }
+.vm-slider input { width: 100%; min-width: 0; margin: 0; }
+@media (max-width: 720px) {
+  .vm-slider input { min-height: var(--hit); }
+}
+.vm-slider i, .vm-swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 0.25rem; }
+.vm-slider output { text-align: right; font-family: var(--font-mono); }
+.vm-check { display: flex; gap: var(--s-2); font-size: var(--t-sm); align-items: center; margin-bottom: var(--s-1); cursor: pointer; }
+@media (max-width: 720px) {
+  .vm-check { min-height: var(--hit); }
+}
+.vm-diff .plus { color: var(--ok); }
+.vm-diff .minus { color: var(--bad); }
+
+.vm-table-wrap { overflow-x: auto; }
+@media (max-width: 720px) {
+  /* Fio de sombra na borda direita: avisa que a tabela continua. */
+  .vm-table-wrap { background: linear-gradient(90deg, transparent calc(100% - 24px), rgb(255 255 255 / 0.06)) ; }
+}
+.vm-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.vm-table th, .vm-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.vm-table th { color: var(--text-3); font: 600 var(--t-xs)/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
+.vm-table td { font-variant-numeric: tabular-nums; }
+.vm-table tbody tr { cursor: default; }
+.vm-table tbody tr.on { background: color-mix(in srgb, var(--info) 12%, transparent); }
+.tag-accent { color: var(--info); }
+.tag-warn { color: var(--signal); }
+
+.vm-facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.8rem; font-size: 0.88rem; margin: 0 0 1rem; }
+.vm-facts dt { color: var(--text-2); }
+.vm-facts dd { margin: 0; }
+
+.vm-ranking ol { list-style: none; padding: 0; margin: 0 0 0.5rem; }
+.vm-ranking ol > li { border-bottom: 1px solid var(--line); }
+.vm-ranking ol > li.open { background: var(--ink-2); }
+.vm-ranking ol.filtered .vm-rank-row { opacity: 0.6; }
+.vm .vm-rank-row, .vm-rank-head {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) 3.2rem 4rem;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0.45rem 0.3rem;
+}
+.vm .vm-rank-row.fares, .vm-rank-head.fares { grid-template-columns: 1.5rem minmax(0, 1fr) 3.2rem 4rem 3.2rem; }
+.vm-rank-head { padding: 0 0.3rem 0.3rem; border-bottom: 1px solid var(--line-strong); color: var(--text-3); font: 600 var(--t-xs)/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
+.vm-rank-head span:nth-child(n + 3) { text-align: right; }
+.vm-rank-n { font-family: var(--font-mono); color: var(--text-2); }
+.vm-rank-fares { font-family: var(--font-mono); font-size: 0.8rem; text-align: right; }
+.vm-rank-trip.bad, .vm-rank-fares.bad { color: var(--bad); }
+.vm-rank-name { overflow-wrap: anywhere; }
+.vm-rank-name .badge { margin-left: 0.3rem; font-size: 0.6rem; padding: 0.15rem 0.3rem; }
+.vm-rank-score { font-family: var(--font-mono); text-align: right; }
+.vm-rank-trip { font-size: 0.8rem; text-align: right; }
+.vm-explain { padding: 0.3rem 0.5rem 0.8rem; }
+/* Requisitos do par: ✓ cumpre, ✗ regra obrigatória que falha, ! só baixa a nota. */
+.vm-checks { list-style: none; margin: 0 0 var(--s-3); padding: 0; display: grid; gap: 0.3rem; font-size: var(--t-sm); }
+.vm-checks li { display: grid; grid-template-columns: 1.2rem 7.5rem 1fr; gap: 0.4rem; align-items: baseline; }
+.vm-checks i { font-style: normal; font-weight: 700; text-align: center; }
+.vm-checks .ok i { color: var(--ok); }
+.vm-checks .bad i, .vm-checks .bad strong { color: var(--bad); }
+.vm-checks .warn i { color: var(--sun); }
+.vm-checks em { color: var(--text-3); font-style: normal; }
+@media (max-width: 480px) {
+  .vm-checks li { grid-template-columns: 1.2rem 1fr; }
+  .vm-checks li span { grid-column: 2; }
+}
+.vm-why { margin-top: var(--s-3); font-size: var(--t-sm); }
+.vm-why summary { cursor: pointer; color: var(--info); }
+.vm-why .vm-table { margin-top: var(--s-2); }
+.vm .vm-link { background: none; border: 0; color: var(--info); padding: 0.3rem 0; }
+/* Nome do algoritmo na tabela: texto, com marca de seleção à esquerda. */
+.vm-table .vm-link { color: var(--text); font-weight: 600; }
+.vm-table .vm-link[aria-pressed='true']::before { content: '● '; color: var(--signal); }
+
+.vm-exec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; }
+.vm-exec-head :is(h2, h3) { margin: 0; }
+.vm-exec-choice { display: flex; gap: 0.4rem; }
+.vm-exec-body { margin-top: 0.8rem; }
+.vm-exec-body p { margin-bottom: 0.5rem; }
+.vm-exec-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; margin: 0.4rem 0 0.8rem; }
+.vm-exec-stats dt { color: var(--text-3); font: 600 var(--t-xs)/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.vm-exec-stats dd { margin: 0; font-family: var(--font-mono); }
+.vm-exec-stats dd.ok { color: var(--ok); }
+.vm-exec-stats dd.bad { color: var(--bad); }
+.vm-exec-status:empty { display: none; }
+.vm-exec-error { color: var(--bad); }
+.vm-exec details { margin-bottom: 0.5rem; }
+.vm-exec details ul { padding-left: 1.2rem; margin: 0.4rem 0 0; }
+
+/* Celular: rótulos das regiões maiores (≈11 px na tela) em vez de encolher com o mapa. */
+@media (max-width: 480px) {
+  .vm-region-label { font-size: 0.38px; }
+}
+
+/* Escolha da cidade: lista ou "minha região" (a localização fica no navegador). */
+.vm-city-bar { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s-3) var(--s-4); margin-bottom: var(--s-4); }
+.vm-city-bar label { display: grid; gap: var(--s-1); }
+.vm-city-bar select { min-height: var(--hit); min-width: 16rem; padding: 0 var(--s-3); font: inherit; color: var(--text); background: var(--ink-1); border: 1px solid var(--line-strong); border-radius: var(--radius); }
+.vm-city-bar p { flex: 1 1 18rem; margin: 0; }
+.vm-city-loading { min-height: 420px; display: grid; place-items: center; color: var(--text-2); }
+.vm-city-error { color: var(--bad); }
+.vm-legend .osm { margin-left: auto; }
+
+/* ---------- Território: mapa com painel, zoom e barra de visões sobre ele ---------- */
+.tm { position: relative; margin-top: var(--s-3); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--ink-0); }
+.tm-svg { display: block; width: 100%; height: auto; aspect-ratio: 1; touch-action: pan-y; user-select: none; }
+.tm-svg.pannable { cursor: grab; touch-action: none; }
+.tm-svg.pannable:active { cursor: grabbing; }
+.tm-svg.adding { cursor: crosshair; }
+.tm-land { fill: var(--ink-1); }
+
+/* Pessoas: avatar com iniciais, cor = status ou compatibilidade. */
+.tm-avatar { stroke: var(--ink-0); stroke-width: 0.035; transition: r var(--d-fast); }
+.tm-initials { font: 700 0.13px var(--font-display); fill: var(--ink-0); text-anchor: middle; pointer-events: none; letter-spacing: 0.005px; }
+.tm-person { cursor: pointer; transition: opacity var(--d-med); }
+.tm-person.dim { opacity: 0.16; }
+.tm-person.hl .tm-avatar { stroke: var(--text); stroke-width: 0.05; }
+.tm-person:hover .tm-avatar, .tm-person:focus-visible .tm-avatar { stroke: var(--text); stroke-width: 0.05; }
+.tm-person:focus { outline: none; }
+.tm-tag { font: 600 0.15px var(--font-mono); fill: var(--text); paint-order: stroke; stroke: var(--ink-0); stroke-width: 0.06px; stroke-linejoin: round; pointer-events: none; }
+.tm-ring { fill: none; stroke-width: 0.045; }
+.tm-ring.offer { stroke: var(--sun); stroke-dasharray: 0.12 0.08; animation: tm-spin 3s linear infinite; transform-box: fill-box; transform-origin: center; }
+.tm-ring.hired { stroke: var(--ok); }
+.tm-x { stroke: var(--bad); stroke-width: 0.05; stroke-linecap: round; }
+
+/* Vagas: pino com maleta e etiqueta "empresa · preenchidos/postos". */
+.tm-job { cursor: pointer; }
+.tm-job:focus { outline: none; }
+.tm-pin { fill: var(--kind-test); stroke: var(--ink-0); stroke-width: 0.04; }
+.tm-job.full .tm-pin { fill: var(--ok); }
+.tm-job.remoto .tm-pin { fill: var(--ink-1); stroke: var(--kind-test); stroke-dasharray: 0.08 0.05; stroke-width: 0.05; }
+.tm-job.hibrido .tm-pin { opacity: 0.85; }
+.tm-job.hl .tm-pin, .tm-job:hover .tm-pin, .tm-job:focus-visible .tm-pin { stroke: var(--text); stroke-width: 0.06; }
+.tm-briefcase { fill: none; stroke: var(--ink-0); stroke-width: 0.035; stroke-linejoin: round; }
+.tm-job.remoto .tm-briefcase { stroke: var(--kind-test); }
+.tm-label rect { fill: rgb(15 8 24 / 0.88); stroke: var(--line-strong); stroke-width: 0.02; }
+.tm-job.hl .tm-label rect, .tm-job:hover .tm-label rect { stroke: var(--signal); }
+.tm-label text { font: 600 0.15px var(--font-mono); fill: var(--text); }
+.tm-label-dot { fill: var(--kind-test); }
+.tm-job.full .tm-label-dot { fill: var(--ok); }
+.tm-pulse { fill: none; stroke: var(--signal); stroke-width: 0.04; transform-box: fill-box; transform-origin: center; animation: tm-pulse 1.6s var(--ease) infinite; }
+
+/* Camadas sob os pontos. */
+.tm-area { fill: none; stroke: var(--sun); stroke-width: 0.06; opacity: 0.3; stroke-linecap: round; animation: tm-fade var(--d-slow) var(--ease); filter: drop-shadow(0 0 0.04px var(--sun)); }
+.vm-match.rec { stroke: var(--info); stroke-dasharray: 0.1 0.08; opacity: 0.5; }
+.vm-match.ofertada { stroke: var(--sun); stroke-width: 0.045; opacity: 0.85; stroke-dasharray: 0.14 0.08; animation: tm-march 1s linear infinite; }
+.vm-match.aceita { stroke: var(--ok); stroke-width: 0.05; opacity: 0.9; }
+.vm-match.recusada { stroke: var(--bad); stroke-width: 0.03; opacity: 0.35; stroke-dasharray: 0.05 0.08; }
+.tm-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: tm-draw 0.9s var(--ease) forwards; }
+
+/* Oferta / resposta viajando entre vaga e pessoa. */
+.tm-flight { opacity: 0; animation: tm-flight 0.9s var(--ease) forwards; pointer-events: none; }
+.tm-flight.offer { fill: var(--sun); filter: drop-shadow(0 0 0.08px var(--sun)); }
+.tm-flight.accept { fill: var(--ok); filter: drop-shadow(0 0 0.08px var(--ok)); }
+.tm-flight.decline { fill: var(--bad); }
+
+/* Entrada dos pontos em sequência e "pulo" quando o estado muda. */
+.tm-pop { transform-box: fill-box; transform-origin: center; animation: tm-pop 0.42s var(--ease) both; }
+.tm-bump { transform-box: fill-box; transform-origin: center; animation: tm-bump 0.45s var(--ease); }
+
+@keyframes tm-pop { from { transform: scale(0); opacity: 0; } 70% { transform: scale(1.15); } to { transform: scale(1); opacity: 1; } }
+@keyframes tm-bump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes tm-pulse { from { transform: scale(0.8); opacity: 0.9; } to { transform: scale(2.2); opacity: 0; } }
+@keyframes tm-spin { to { transform: rotate(360deg); } }
+@keyframes tm-march { to { stroke-dashoffset: -0.44; } }
+@keyframes tm-draw { to { stroke-dashoffset: 0; } }
+@keyframes tm-fade { from { opacity: 0; } }
+@keyframes tm-flight { 0% { opacity: 0; } 10% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Painel sobre o mapa (canto superior direito), como um card flutuante. */
+.tm-panel {
+  position: absolute; top: var(--s-3); right: var(--s-3); width: min(260px, 46%);
+  display: grid; gap: var(--s-2); padding: var(--s-3);
+  background: rgb(26 15 38 / 0.9); backdrop-filter: blur(8px);
+  border: 1px solid var(--line-strong); border-top: 2px solid var(--signal); border-radius: var(--radius);
+  font-size: var(--t-sm);
+}
+.tm-panel-title { margin: 0; font: italic 700 1.05rem/1.1 var(--font-display); text-transform: uppercase; }
+.tm-progress { display: grid; grid-template-columns: 1fr auto; gap: 0.3rem; font: var(--t-xs)/1.2 var(--font-mono); color: var(--text-2); }
+.tm-progress strong { color: var(--text); }
+.tm-progress i { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--ok) calc(var(--p) * 100%), var(--line) 0); transition: background var(--d-slow); }
+.tm-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.tm-legend button, .tm-legend span { width: 100%; display: flex; align-items: center; gap: var(--s-2); min-height: 30px; padding: 0 var(--s-2); font: inherit; color: var(--text); background: none; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; text-align: left; }
+.tm-legend.static span { cursor: default; color: var(--text-2); }
+.tm-legend button:hover { border-color: var(--line-strong); }
+.tm-legend button[aria-pressed='true'] { border-color: var(--signal); background: rgb(255 61 139 / 0.08); }
+.tm-legend button.off { opacity: 0.45; }
+.tm-legend i { flex: none; width: 11px; height: 11px; border-radius: 50%; }
+.tm-legend span:not(:has(i)) { flex: 1; }
+.tm-legend button span { padding: 0; border: 0; min-height: 0; flex: 1; }
+.tm-legend b { font: 600 var(--t-xs)/1 var(--font-mono); color: var(--text-2); }
+.tm-area-box { border-top: 1px solid var(--line); padding-top: var(--s-2); }
+.tm-area-box p { margin: 0 0 var(--s-1); color: var(--text-2); }
+.tm-area-box strong { color: var(--sun); }
+.tm-area-box input { width: 100%; }
+
+/* Zoom (canto superior esquerdo) e barra de visões (rodapé, centralizada). */
+.tm-zoom { position: absolute; top: var(--s-3); left: var(--s-3); display: grid; gap: 2px; }
+.tm-zoom button, .tm-views button { min-width: 36px; min-height: 36px; font: 600 var(--t-md)/1 var(--font-mono); color: var(--text); background: rgb(26 15 38 / 0.9); border: 1px solid var(--line-strong); border-radius: var(--radius); cursor: pointer; }
+.tm-zoom button:disabled { opacity: 0.4; cursor: default; }
+.tm-zoom button:hover:not(:disabled), .tm-views button:hover { border-color: var(--signal); }
+.tm-dock { position: absolute; left: 50%; bottom: var(--s-3); translate: -50% 0; }
+.tm-views { display: flex; padding: 3px; gap: 3px; background: rgb(15 8 24 / 0.9); backdrop-filter: blur(8px); border: 1px solid var(--line-strong); border-radius: 999px; }
+.tm-views button { padding: 0 var(--s-4); border-radius: 999px; border-color: transparent; background: none; font: italic 700 0.95rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; }
+.tm-views button[aria-checked='true'] { background: var(--signal); color: var(--signal-ink); }
+
+/* Cartão de hover. */
+.tm-hover {
+  position: absolute; z-index: 3; max-width: 280px; translate: -50% calc(-100% - 18px); pointer-events: none;
+  padding: var(--s-2) var(--s-3); font-size: var(--t-xs); line-height: 1.4; color: var(--text);
+  background: var(--ink-2); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 6px 18px rgb(0 0 0 / 0.4);
+  animation: tm-fade var(--d-fast) var(--ease);
+}
+
+.vm-toolbar-gap { flex: 1; }
+.vm-offer-btn:not(:disabled) { border-color: var(--sun) !important; color: var(--sun); }
+.vm-legend .ln.area { border-top-color: var(--sun); }
+.vm-offer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); margin-bottom: var(--s-3); }
+.vm-offer .button { min-height: 36px; font-size: var(--t-sm); }
+.badge.offer.ofertada { color: var(--sun); }
+.badge.offer.aceita { color: var(--ok); }
+.badge.offer.recusada { color: var(--bad); }
+.vm-status { color: var(--c); font-weight: 700; }
+.vm-status::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 0.4em; border-radius: 50%; background: var(--c); }
+
+@media (max-width: 720px) {
+  .tm-panel { position: static; width: auto; margin: var(--s-2); }
+  .tm-dock { position: static; translate: none; display: flex; justify-content: center; padding-bottom: var(--s-2); }
+}
+.vm-map .tm-svg { margin: 0; border: 0; }
+
+/* Traços com espessura fixa na tela: o zoom aproxima o mapa, não engorda as ruas. */
+.tm .vm-road, .tm .vm-river, .tm .vm-coast, .tm .tm-area, .tm .vm-reach, .tm .vm-match, .tm .vm-straight { vector-effect: non-scaling-stroke; }
+.tm .vm-road.c0 { stroke-width: 5px; }
+.tm .vm-road.c1 { stroke-width: 3.4px; }
+.tm .vm-road.c2 { stroke-width: 2.6px; }
+.tm .vm-road.c3 { stroke-width: 2px; }
+.tm .vm-road.c4 { stroke-width: 1.4px; }
+.tm .vm-road.c5 { stroke-width: 1px; }
+.tm .vm-river { stroke-width: 6px; }
+.tm .vm-coast { stroke-width: 2.5px; }
+.tm .tm-area { stroke-width: 5px; filter: none; }
+.tm .vm-reach { stroke-width: 4px; }
+.tm .vm-match { stroke-width: 2.5px; }
+.tm .vm-match.rec { stroke-dasharray: 7 6; }
+.tm .vm-match.ofertada { stroke-width: 3px; stroke-dasharray: 10 6; animation: tm-march-px 0.8s linear infinite; }
+.tm .vm-match.aceita { stroke-width: 3px; }
+.tm .vm-match.recusada { stroke-width: 2px; stroke-dasharray: 3 6; }
+.tm .vm-straight { stroke-width: 2.5px; stroke-dasharray: 9 7; }
+/* A rota anima o desenho (pathLength = 1); a espessura acompanha o zoom pela variável --z. */
+.tm .vm-route { stroke-width: calc(0.09 * var(--z)); }
+@keyframes tm-march-px { to { stroke-dashoffset: -32; } }
+.vm-mode { display: grid; gap: var(--s-1); }
+.vm-mode > div { display: flex; padding: 3px; gap: 3px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--ink-1); }
+.vm-mode button { min-height: 36px; padding: 0 var(--s-4); font: italic 700 0.95rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--text); background: none; border: 0; border-radius: 999px; cursor: pointer; }
+.vm-mode button[aria-checked='true'] { background: var(--signal); color: var(--signal-ink); }
+.vm-mode button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Transporte público: ônibus finos e translúcidos (os corredores aparecem pela sobreposição); trilhos grossos. */
+.tm .tm-transit { fill: none; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.tm .tm-transit.bus { stroke-width: 1.6px; opacity: 0.22; }
+.tm .tm-transit.rail { stroke-width: 4px; opacity: 0.8; }
+/* Trajeto do par aberto: a pé tracejado claro; cada embarque na cor do modo. */
+.tm .tm-leg { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.tm .tm-leg.walk { stroke: var(--text); vector-effect: non-scaling-stroke; stroke-width: 2.5px; stroke-dasharray: 2 5; }
+.tm .tm-leg.ride { stroke-width: calc(0.09 * var(--z)); }
+.vm-legend .ln.walkleg { border-top: 2px dotted var(--text); }
+.vm-trip { margin: var(--s-2) 0 0; color: var(--text); }
+
+/* Etiqueta de vaga em duas linhas: empresa · postos / cargo. */
+.tm-label text.tm-label-title { font: 400 0.12px var(--font-body); fill: var(--text-2); }
+.tm-job.dim { opacity: 0.18; }
+.vm-clients tr.on td { background: rgb(255 61 139 / 0.08); }
+.vm-clients .vm-link[aria-pressed='true'] { color: var(--signal); }

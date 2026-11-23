@@ -1,0 +1,54 @@
+---
+/**
+ * Retrato do projeto de vagas na home: o cenário padrão sobre o mapa real da cidade inicial,
+ * calculado no build com o mesmo código do projeto.
+ */
+import { existsSync, readFileSync } from 'node:fs';
+import { DEFAULT_CITY, parseCityMap, type CityMapFile } from '../../lib/city/map';
+import { runMatching } from '../../lib/matching/api';
+import { makeScenario } from '../../lib/matching/data';
+import { CONSTRAINTS, WEIGHTS } from '../../lib/lab/stability';
+
+// Cenário seed 7 com a alocação do Hungarian.
+const mapFile = existsSync(`public/maps/${DEFAULT_CITY}.json`) ? `public/maps/${DEFAULT_CITY}.json` : 'public/maps/curitiba.json';
+const city = parseCityMap(JSON.parse(readFileSync(mapFile, 'utf8')) as CityMapFile);
+const KM = city.km;
+const scenario = makeScenario(7, 12, 40, city);
+const result = runMatching({ city: city.id, ...scenario, weights: WEIGHTS, constraints: CONSTRAINTS }, city).hungarian;
+// Só as vias principais: o retrato é pequeno e vai no HTML da home.
+const f3 = (n: number) => n.toFixed(2);
+const roads = city.network.segments
+  .map((s, i) => (city.segmentClass[i] > 2 ? '' : 'M' + [city.point(s.a), ...city.segmentShape[i], city.point(s.b)].map((p) => `${f3(p.x)},${f3(p.y)}`).join('L')))
+  .join('');
+const water = city.water.filter((w) => w.kind !== 2).map((w) => ({ closed: w.kind === 0, d: w.pts.map((p) => `${f3(p.x)},${f3(p.y)}`).join(' ') }));
+const vac = new Map(scenario.vacancies.map((v) => [v.id, v.pos]));
+const cand = new Map(scenario.candidates.map((c) => [c.id, c.pos]));
+const matched = new Set(result.pairs.map((m) => m.candidateId));
+---
+<figure class="snap" aria-hidden="true">
+  <svg viewBox={`0 0 ${KM} ${KM}`}>
+    {water.map((w) => (w.closed ? <polygon points={w.d} class="lake" /> : <polyline points={w.d} class="river" />))}
+    <path d={roads} class="road" />
+    {result.pairs.map((m) => {
+      const a = vac.get(m.vacancyId)!;
+      const b = cand.get(m.candidateId)!;
+      return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} class="pair" />;
+    })}
+    {scenario.candidates.map((c) => <circle cx={c.pos.x} cy={c.pos.y} r={0.16} class:list={['cand', { on: matched.has(c.id) }]} />)}
+    {scenario.vacancies.map((v) => <rect x={v.pos.x - 0.2} y={v.pos.y - 0.2} width={0.4} height={0.4} class="vac" />)}
+  </svg>
+  <figcaption>{city.name} · cenário 7 · {result.metrics.pairs} pares · {result.metrics.blockingPairs} bloqueantes</figcaption>
+</figure>
+
+<style>
+  .snap { margin: 0; }
+  svg { display: block; width: 100%; height: auto; background: var(--ink-1); border: 1px solid var(--line); transition: border-color var(--d-med); }
+  figcaption { margin-top: var(--s-2); font: var(--t-xs)/1.4 var(--font-mono); color: var(--text-3); }
+  .road { fill: none; stroke: var(--line-strong); stroke-width: 0.05; stroke-linejoin: round; }
+  .river { fill: none; stroke: #1d7f9a; stroke-width: 0.08; opacity: 0.7; }
+  .lake { fill: #1d7f9a; opacity: 0.45; }
+  .pair { stroke: var(--info); stroke-width: 0.05; opacity: 0.6; }
+  .cand { fill: var(--ink-1); stroke: var(--ok); stroke-width: 0.06; }
+  .cand.on { fill: var(--ok); }
+  .vac { fill: var(--kind-test); }
+</style>

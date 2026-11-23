@@ -1,0 +1,28 @@
+/* Transparência no rodapé: uma linha fechada, uma ficha técnica aberta. */
+.delivery { font-size: var(--t-sm); }
+.delivery-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--hit);
+  padding: 0;
+  font: 600 var(--t-xs)/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.delivery-toggle:hover { color: var(--text); }
+.delivery-toggle .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.delivery-toggle .chev { color: var(--signal); font-size: var(--t-sm); }
+.delivery-panel { max-width: 48rem; padding: var(--s-4) 0 var(--s-2); border-top: 1px solid var(--line); }
+.delivery-panel dl { margin: 0; display: grid; grid-template-columns: minmax(10rem, max-content) 1fr; gap: var(--s-3) var(--s-5); }
+.delivery-panel dt { font: 600 var(--t-xs)/1.5 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+.delivery-panel dd { margin: 0; color: var(--text); }
+.delivery-panel ul { margin: var(--s-1) 0 0; padding-left: 1.1rem; font-size: var(--t-xs); word-break: break-all; }
+@media (max-width: 720px) {
+  .delivery-panel dl { grid-template-columns: 1fr; gap: var(--s-1); }
+  .delivery-panel dd { margin-bottom: var(--s-3); }
+}

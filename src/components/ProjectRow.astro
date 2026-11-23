@@ -1,0 +1,40 @@
+---
+/**
+ * Projeto na home: à esquerda, um retrato do sistema (portraits/); à direita, o que ele é.
+ */
+import { runtimeLabel, type Project } from '../data/experiments';
+import DocumentosPortrait from './portraits/DocumentosPortrait.astro';
+import VagasPortrait from './portraits/VagasPortrait.astro';
+
+interface Props {
+  project: Project;
+  index: number;
+}
+const { project: p, index } = Astro.props;
+---
+<a class="row" href={p.href}>
+  {p.slug === 'vagas' ? <VagasPortrait /> : <DocumentosPortrait />}
+  <div class="text">
+    <p class="label">projeto {String(index).padStart(2, '0')} · {p.category}</p>
+    <h3>{p.title}</h3>
+    <p class="tagline">{p.tagline}</p>
+    <div class="badges">{p.runtimes.map((r) => <span class:list={['badge', r]}>{runtimeLabel[r]}</span>)}</div>
+    <span class="go">Abrir o projeto <span aria-hidden="true">→</span></span>
+  </div>
+</a>
+
+<style>
+  .row { display: grid; grid-template-columns: minmax(220px, 360px) minmax(0, 1fr); gap: var(--s-6); align-items: center; padding-block: var(--s-5); color: var(--text); text-decoration: none; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .row:hover :global(svg) { border-color: var(--line-strong); }
+  .text { display: grid; gap: var(--s-3); justify-items: start; }
+  .text > * { margin: 0; }
+  h3 { font-size: var(--t-2xl); }
+  .tagline { font-size: var(--t-lg); color: var(--text-2); }
+  .badges { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+  .go { margin-top: var(--s-2); font: 600 var(--t-sm)/1 var(--font-mono); color: var(--signal); }
+  .go span { display: inline-block; transition: transform var(--d-fast) var(--ease); }
+  .row:hover .go span { transform: translateX(4px); }
+  @media (max-width: 720px) {
+    .row { grid-template-columns: 1fr; gap: var(--s-4); }
+  }
+</style>

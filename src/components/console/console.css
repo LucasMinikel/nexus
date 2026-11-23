@@ -1,0 +1,100 @@
+/* Console do núcleo: o mesmo na home e no painel das outras páginas. */
+.cx {
+  padding: 0 var(--s-4) var(--s-3);
+  background: rgb(26 15 38 / 0.92);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px);
+  font: var(--t-sm)/1.55 var(--font-mono);
+  color: var(--text);
+}
+.cx:focus-within { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.cx-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0 calc(-1 * var(--s-4)) var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-xs);
+  color: var(--text-3);
+}
+.cx-title { color: var(--text-2); font-weight: 600; }
+.cx-meta { margin-left: auto; white-space: nowrap; }
+.cx.busy .cx-meta { color: var(--signal); }
+/* O ponto acende enquanto a resposta está sendo escrita: é o estado do núcleo, não enfeite. */
+.cx-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); transition: background var(--d-fast); }
+.cx.busy .cx-dot { background: var(--signal); }
+.cx-actions { display: flex; gap: var(--s-1); }
+
+.cx button {
+  min-height: 32px;
+  font: 600 var(--t-xs)/1 var(--font-mono);
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 0 var(--s-3);
+  cursor: pointer;
+  transition: border-color var(--d-fast), color var(--d-fast);
+}
+.cx button:hover { border-color: var(--signal); color: var(--signal); }
+.cx-trophy { color: var(--signal) !important; }
+
+.cx-log { max-height: 200px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.cx-line { white-space: pre-wrap; word-break: break-word; color: var(--text-2); min-height: 1.55em; }
+.cx-line.cmd { color: var(--text); margin-top: var(--s-2); }
+.cx-line.muted { color: var(--text-3); }
+.cx-line.ok { color: var(--ok); }
+.cx-line.warn { color: var(--signal); }
+.cx-line.error { color: var(--bad); }
+.cx-line.accent { color: var(--text); }
+.cx .cx-line.link {
+  display: block;
+  width: 100%;
+  min-height: 1.55em;
+  text-align: left;
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  white-space: pre-wrap;
+  color: var(--info);
+  text-decoration: none;
+  cursor: pointer;
+}
+.cx .cx-line.link:hover { color: var(--signal); }
+.cx-caret { display: inline-block; width: 0.55em; height: 1em; margin-left: 1px; vertical-align: -0.15em; background: var(--signal); }
+.cx-prompt { color: var(--signal); }
+
+.cx-input { display: flex; align-items: center; gap: var(--s-2); margin-top: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--line); }
+.cx-input input { flex: 1; min-width: 0; min-height: 36px; background: none; border: 0; outline: none; color: var(--text); font: inherit; font-size: 16px; /* evita zoom no iOS */ caret-color: var(--signal); }
+.cx-input input::placeholder { color: var(--text-3); }
+.cx-input kbd { font: 0.6875rem/1 var(--font-mono); color: var(--text-3); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.2rem 0.35rem; }
+.cx-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-2); }
+.cx-chips button { white-space: nowrap; font-weight: 400; min-height: 36px; }
+
+.cx-toast {
+  position: fixed;
+  top: 72px;
+  right: var(--gutter);
+  z-index: var(--z-toast);
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-5);
+  background: var(--signal);
+  color: var(--signal-ink);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  animation: cx-pop var(--d-slow) var(--ease);
+}
+.cx-toast span { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.1em; }
+.cx-toast strong { font: 700 var(--t-lg)/1.1 var(--font-display); }
+@keyframes cx-pop { from { opacity: 0; transform: translateY(-8px); } }
+
+@media (max-width: 720px) {
+  .cx-log { max-height: 120px; }
+  .cx-meta { display: none; }
+  .cx button, .cx-chips button, .cx-input input { min-height: var(--hit); }
+}
