@@ -1,0 +1,145 @@
+/*
+ * Home: a rede ocupa a primeira tela. No desktop, texto, leitura e console ficam
+ * sobre a cena; abaixo de 1024 px, empilham (texto → rede → console) para nada
+ * cobrir a rede nem o console ficar a uma tela de distância.
+ */
+.nx {
+  position: relative;
+  height: calc(100svh - 57px);
+  min-height: 640px;
+  overflow: hidden;
+  color: var(--text);
+  background: radial-gradient(ellipse at 62% 50%, #2a1035 0%, var(--ink-0) 60%);
+  isolation: isolate;
+  /* Mesma borda do cabeçalho (.container): o texto do herói alinha com a marca. */
+  --edge: max(var(--gutter), (100% - var(--max)) / 2);
+}
+.nx-stage { position: absolute; inset: 0; }
+/* Mesmo deslocamento da câmera em telas largas (NexusScene.resize). */
+@media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
+  .nx-poster { transform: translateX(16%); }
+}
+.nx-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+.nx-canvas:active { cursor: grabbing; }
+/* Pôster da rede (SVG do build): some quando a cena 3D desenha o primeiro quadro. */
+.nx-poster { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity var(--d-slow) var(--ease); }
+.nx-poster path { stroke: var(--line); stroke-width: 0.03; fill: none; }
+.nx-poster circle { fill: #6b4f80; }
+.nx-poster .core { fill: var(--text); }
+.nx-poster .section { fill: var(--kind-section); }
+.nx-poster .experiment { fill: var(--kind-test); }
+.nx-poster .project { fill: var(--kind-project); }
+.nx.ready .nx-poster { opacity: 0; }
+.nx.no3d .nx-labels { display: none; }
+.nx.no3d .nx-stage { background: radial-gradient(circle at 60% 50%, #3a1640, transparent 45%); }
+
+.nx-labels { position: absolute; inset: 0; pointer-events: none; z-index: var(--z-overlay); }
+.nx-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -190%;
+  white-space: nowrap;
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: 600 var(--t-xs)/1 var(--font-mono);
+  padding: 0.3rem 0.45rem;
+  background: rgb(15 8 24 / 0.72);
+  color: var(--text);
+  will-change: transform;
+  /* Invisível até a cena posicionar o rótulo (e para sempre, se não houver WebGL). */
+  opacity: 0;
+}
+.nx-label.core { translate: -50% 260%; color: var(--signal); background: none; letter-spacing: 0.1em; text-transform: uppercase; }
+.nx-label.section { color: var(--kind-section); text-transform: uppercase; letter-spacing: 0.08em; }
+.nx-label.experiment { color: var(--kind-test); }
+.nx-label.project { color: var(--kind-project); }
+.nx-label.hot { color: var(--signal-ink); background: var(--signal); }
+
+.nx-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: 18px -50%;
+  display: grid;
+  gap: var(--s-1);
+  width: 250px;
+  padding: var(--s-3) var(--s-4);
+  background: var(--ink-2);
+  border: 1px solid var(--line-strong);
+  border-left: 2px solid var(--signal);
+  z-index: 4;
+}
+.nx-card-kind { font: 600 var(--t-xs)/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--signal); }
+.nx-card strong { font-family: var(--font-display); font-size: var(--t-lg); line-height: 1.15; }
+.nx-card-sum { font-size: var(--t-sm); color: var(--text-2); line-height: 1.4; }
+.nx-card-actions { display: flex; gap: var(--s-1); margin-top: var(--s-2); }
+.nx-card button {
+  min-height: 36px;
+  font: 600 var(--t-xs)/1 var(--font-mono);
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 0 var(--s-3);
+  cursor: pointer;
+}
+.nx-card button:first-child { color: var(--signal-ink); background: var(--signal); border-color: var(--signal); }
+.nx-card button:hover { border-color: var(--signal); }
+
+.nx-head { position: absolute; top: clamp(2rem, 7vh, 5rem); left: var(--edge); max-width: 44rem; z-index: 3; pointer-events: none; }
+.nx-head > * { pointer-events: auto; }
+.nx-eyebrow { font: 600 var(--t-xs)/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sun); margin: 0 0 var(--s-4); }
+.nx-head h1 { font-size: var(--t-display); line-height: 0.88; letter-spacing: -0.01em; margin: 0; }
+/* Segunda linha do título no degradê do pôr do sol, como num pôster. */
+.nx-head h1 em { display: inline-block; padding-right: 0.08em; background: var(--sunset); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.nx-sub { color: var(--text-2); font-size: var(--t-lg); line-height: 1.45; margin: var(--s-5) 0 0; max-width: 32rem; }
+.nx-cta { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-5); }
+
+/* Leitura da cena: números reais medidos a cada segundo. */
+.nx-readout {
+  position: absolute;
+  top: clamp(2rem, 8vh, 6rem);
+  right: var(--edge);
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  min-width: 200px;
+  padding-left: var(--s-4);
+  font: var(--t-xs)/1.2 var(--font-mono);
+  border-left: 1px solid var(--line-strong);
+  z-index: 3;
+}
+.nx-readout div { display: flex; justify-content: space-between; gap: var(--s-5); }
+.nx-readout dt { color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+.nx-readout dd { margin: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+.nx-readout dd.focus { color: var(--signal); max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Console na coluna do texto: a rede (deslocada para a direita) fica inteira livre para clique. */
+.nx-term { position: absolute; left: var(--edge); bottom: var(--s-5); width: min(540px, 40vw); z-index: 3; }
+/* Notebooks baixos: console compacto para não encostar nas ações do título. Os atalhos ficam numa
+   linha rolável, com degradê na borda avisando que há mais. */
+@media (max-height: 900px) and (min-width: 1024px) {
+  .nx-term .cx-log { max-height: 4.7em; }
+  .nx-term .cx-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(90deg, #000 85%, transparent); padding-right: var(--s-6); }
+}
+
+/* A leitura só aparece quando há altura para ela não encostar no console. */
+@media (max-width: 1280px), (max-height: 820px) {
+  .nx-readout { display: none; }
+}
+
+/* Abaixo de 1024 px: empilha. A rede ganha uma altura própria e nada a cobre. */
+@media (max-width: 1023px) {
+  .nx { height: auto; min-height: 0; display: flex; flex-direction: column; padding-bottom: var(--s-5); }
+  .nx-head { position: static; order: 1; padding: var(--s-6) var(--gutter) 0; max-width: none; }
+  .nx-stage { position: relative; order: 2; height: 58svh; min-height: 360px; }
+  .nx-term { position: static; order: 3; width: auto; margin: 0 var(--gutter); }
+  .nx-sub { font-size: var(--t-md); }
+}
+@media (max-width: 480px) {
+  .nx-label { font-size: 0.6875rem; max-width: 18ch; }
+  .nx-label.core { display: none; }
+  .nx-card { width: 210px; }
+}

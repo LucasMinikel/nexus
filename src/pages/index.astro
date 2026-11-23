@@ -1,0 +1,65 @@
+---
+import Base from '../layouts/Base.astro';
+import NexusHero from '../components/nexus/NexusHero';
+import ProjectRow from '../components/ProjectRow.astro';
+import { labTests, projects } from '../data/experiments';
+import { profile } from '../data/profile';
+import { getSiteItems } from '../lib/site-graph';
+
+const items = getSiteItems();
+---
+<Base title="NEXUS" bare>
+  <NexusHero client:idle items={items} name={profile.name} />
+
+  <div class="container below" id="conteudo">
+    <section aria-labelledby="lab-title">
+      <header class="sec">
+        <p class="rail"><span>01</span>Lab</p>
+        <h2 id="lab-title">Hipóteses com veredito calculado ao vivo</h2>
+      </header>
+      <ol class="tests">
+        {labTests.map((t, i) => (
+          <li>
+            <a href={t.href}>
+              <span class="n">{String(i + 1).padStart(2, '0')}</span>
+              <span class="hyp">{t.hypothesis}</span>
+              <span class="go">rodar o teste <span aria-hidden="true">→</span></span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section aria-labelledby="proj-title">
+      <header class="sec">
+        <p class="rail"><span>02</span>Projetos</p>
+        <h2 id="proj-title">Sistemas completos, para usar aqui mesmo</h2>
+      </header>
+      {projects.map((p, i) => <ProjectRow project={p} index={i + 1} />)}
+    </section>
+  </div>
+</Base>
+
+<style>
+  .below { display: grid; gap: var(--s-8); padding-block: var(--s-8); }
+  section { scroll-margin-top: 72px; }
+  .sec { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); gap: var(--s-5); align-items: baseline; margin-bottom: var(--s-5); }
+  .rail { margin: 0; display: grid; gap: var(--s-1); font: 600 var(--t-xs)/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+  .rail span { font-size: var(--t-lg); color: var(--signal); letter-spacing: 0; }
+  h2 { margin: 0; font-size: var(--t-2xl); max-width: 22ch; }
+  .tests { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--line); }
+  .tests a { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr) auto; gap: var(--s-5); align-items: baseline; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
+  .n { font: 600 var(--t-sm)/1 var(--font-mono); color: var(--text-3); }
+  .hyp { font: 700 var(--t-xl)/1.2 var(--font-display); letter-spacing: -0.015em; max-width: 34ch; }
+  .go { font: 600 var(--t-sm)/1 var(--font-mono); color: var(--signal); white-space: nowrap; }
+  .go span { display: inline-block; transition: transform var(--d-fast) var(--ease); }
+  .tests a:hover .hyp { color: var(--signal); }
+  .tests a:hover .go span { transform: translateX(4px); }
+  @media (max-width: 720px) {
+    .sec { grid-template-columns: 1fr; gap: var(--s-2); }
+    .rail { display: flex; gap: var(--s-2); align-items: baseline; }
+    .rail span { font-size: var(--t-sm); }
+    .tests a { grid-template-columns: 2rem minmax(0, 1fr); gap: var(--s-2) var(--s-3); }
+    .go { grid-column: 2; }
+  }
+</style>

@@ -1,0 +1,11 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/hud/PageHead.astro';
+import StabilityTest from '../../components/lab/StabilityTest';
+import DetourTest from '../../components/lab/DetourTest';
+---
+<Base title="Lab" description="Hipóteses testadas ao vivo no seu navegador, com veredito calculado na hora.">
+  <PageHead index="01" section="Lab" title="Cada afirmação, medida." lead="Cada teste roda aqui, no seu navegador, e o veredito sai dos números. Mude os parâmetros e veja se ele se sustenta." />
+  <StabilityTest client:visible />
+  <DetourTest client:visible />
+</Base>

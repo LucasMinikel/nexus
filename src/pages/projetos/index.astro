@@ -1,0 +1,46 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/hud/PageHead.astro';
+import VacancyMatching from '../../components/vacancy-matching/VacancyMatching';
+import DocCheckDemo from '../../components/doc-check/DocCheckDemo';
+import { projects, runtimeLabel } from '../../data/experiments';
+---
+<Base title="Projetos" description="Sistemas completos rodando, para verificar de ponta a ponta.">
+  <PageHead index="02" section="Projetos" title="Sistemas completos, rodando." lead="Nada de captura de tela: use o projeto aqui mesmo." />
+
+  {projects.map((p, i) => (
+    <section class="project" id={p.slug} aria-labelledby={`${p.slug}-title`}>
+      <header>
+        <p class="rail"><span>{String(i + 1).padStart(2, '0')}</span>projeto</p>
+        <div>
+          <h2 id={`${p.slug}-title`}>{p.title}</h2>
+          <p class="tagline">{p.tagline}</p>
+        </div>
+        <div class="meta">
+          <div class="badges">{p.runtimes.map((r) => <span class:list={['badge', r]}>{runtimeLabel[r]}</span>)}</div>
+          <a href={p.href}>Como funciona, código e limitações →</a>
+        </div>
+      </header>
+      {/* Documentos: client:only, porque câmera, canvas e Web Worker não existem no build estático. */}
+      {p.slug === 'vagas' ? <VacancyMatching client:visible /> : <DocCheckDemo client:only="react" />}
+    </section>
+  ))}
+</Base>
+
+<style>
+  .project { padding-top: var(--s-6); }
+  .project + .project { margin-top: var(--s-7); border-top: 1px solid var(--line); }
+  header { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr) auto; gap: var(--s-5); align-items: end; margin-bottom: var(--s-5); }
+  .rail { margin: 0; display: grid; gap: var(--s-1); align-self: start; padding-top: 0.4rem; font: 600 var(--t-xs)/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+  .rail span { font-size: var(--t-lg); color: var(--signal); letter-spacing: 0; }
+  h2 { margin: 0; font-size: var(--t-2xl); }
+  .tagline { margin: var(--s-2) 0 0; color: var(--text-2); font-size: var(--t-lg); }
+  .meta { display: grid; gap: var(--s-3); justify-items: end; font-size: var(--t-sm); }
+  .badges { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+  @media (max-width: 860px) {
+    header { grid-template-columns: 1fr; gap: var(--s-3); }
+    .rail { display: flex; gap: var(--s-2); align-items: baseline; }
+    .rail span { font-size: var(--t-sm); }
+    .meta { justify-items: start; }
+  }
+</style>

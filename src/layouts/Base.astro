@@ -1,0 +1,125 @@
+---
+import '../styles/global.css';
+import { profile } from '../data/profile';
+import DeliveryInfo from '../components/transparency/DeliveryInfo';
+import CommandDock from '../components/console/CommandDock';
+import { getSiteItems } from '../lib/site-graph';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Sem container nem console próprio: a página controla o layout e tem o próprio console (home). */
+  bare?: boolean;
+}
+const { title, description = profile.headline, bare = false } = Astro.props;
+const nav = [
+  { href: '/lab', label: 'Lab' },
+  { href: '/projetos', label: 'Projetos' },
+];
+const path = Astro.url.pathname;
+const items = bare ? [] : getSiteItems();
+---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0f0818" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/heroscn-bold.woff" as="font" type="font/woff" crossorigin />
+    <link rel="preload" href="/fonts/heroscn-bolditalic.woff" as="font" type="font/woff" crossorigin />
+    <link rel="preload" href="/fonts/heros-regular.woff" as="font" type="font/woff" crossorigin />
+    <title>{title === 'NEXUS' ? title : `${title} · NEXUS`}</title>
+  </head>
+  <body>
+    <a class="skip" href="#conteudo-principal">Pular para o conteúdo</a>
+    <header class="site-header">
+      <div class="container bar">
+        <a href="/" class="brand" aria-label="NEXUS, início"><span class="mark" aria-hidden="true"></span><span class="sunset-text">NEXUS</span></a>
+        <nav aria-label="Seções">
+          {nav.map((n, i) => (
+            <a href={n.href} aria-current={path.startsWith(n.href) ? 'page' : undefined}>
+              <span class="idx">{String(i + 1).padStart(2, '0')}</span>{n.label}
+            </a>
+          ))}
+        </nav>
+        <!-- Abre o console do núcleo: na home foca o console da cena; nas outras páginas abre o painel. -->
+        <button type="button" class="ask" data-open-console>
+          <span>Perguntar</span><kbd>Ctrl K</kbd>
+        </button>
+      </div>
+    </header>
+    <main id="conteudo-principal" class:list={bare ? ['bare'] : ['container']}>
+      <slot />
+    </main>
+    {!bare && <CommandDock client:load items={items} name={profile.name} />}
+    <div class="horizon" aria-hidden="true"></div>
+    <footer class="container">
+      <DeliveryInfo client:idle />
+      <p class="sign">{profile.name} · <a href={profile.links.github}>código no GitHub</a></p>
+    </footer>
+  </body>
+</html>
+
+<script>
+  document.querySelector('[data-open-console]')?.addEventListener('click', () => dispatchEvent(new CustomEvent('nexus:open-console')));
+</script>
+
+<style>
+  .skip { position: absolute; left: var(--s-4); top: -100px; z-index: var(--z-toast); padding: var(--s-3) var(--s-4); background: var(--signal); color: var(--signal-ink); }
+  .skip:focus { top: var(--s-4); }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    background: rgb(15 8 24 / 0.86);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar { display: flex; align-items: center; gap: var(--s-6); min-height: 56px; }
+  .brand { display: flex; align-items: center; gap: var(--s-2); font: italic 700 1.6rem/1 var(--font-display); letter-spacing: 0.02em; color: var(--text); text-decoration: none; }
+  /* Marca: o sol se pondo no horizonte — disco em degradê cortado por faixas. */
+  .mark {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: repeating-linear-gradient(180deg, transparent 0 55%, var(--ink-0) 55% 62%, transparent 62% 72%, var(--ink-0) 72% 78%, transparent 78%), var(--sunset);
+  }
+  nav { display: flex; gap: var(--s-5); }
+  nav a { display: flex; align-items: baseline; gap: var(--s-2); min-height: var(--hit); align-items: center; color: var(--text-2); text-decoration: none; font: 700 1.15rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 2px solid transparent; }
+  nav a:hover { color: var(--text); }
+  nav a[aria-current='page'] { color: var(--text); border-bottom-color: var(--signal); }
+  .idx { font: 600 var(--t-xs)/1 var(--font-mono); color: var(--sun); }
+  .ask {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 36px;
+    padding: 0 var(--s-2) 0 var(--s-4);
+    font: 600 var(--t-sm)/1 var(--font-mono);
+    color: var(--text);
+    background: none;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color var(--d-fast), color var(--d-fast);
+  }
+  .ask:hover { border-color: var(--signal); color: var(--signal); }
+  .ask kbd { font: 0.6875rem/1 var(--font-mono); color: var(--text-3); border: 1px solid var(--line); padding: 0.25rem 0.35rem; border-radius: var(--radius); }
+  @media (max-width: 720px) {
+    .bar { gap: var(--s-4); }
+    .brand { font-size: 1.3rem; }
+    nav a { font-size: 1rem; }
+    nav { gap: var(--s-4); }
+    .idx, .ask kbd { display: none; }
+    .ask { min-height: var(--hit); padding: 0 var(--s-3); }
+  }
+
+  main { padding-block: var(--s-6) var(--s-8); }
+  main.bare { padding: 0; }
+  footer { display: grid; gap: var(--s-2); padding-block: var(--s-5) var(--s-6); }
+  .sign { margin: 0; font-size: var(--t-sm); color: var(--text-3); }
+</style>

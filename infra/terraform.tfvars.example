@@ -1,0 +1,12 @@
+# Copie para terraform.tfvars (ignorado pelo git) e preencha.
+gcp_project_id        = "meu-projeto"
+billing_account_id    = "XXXXXX-XXXXXX-XXXXXX"
+cloudflare_account_id = "0123456789abcdef0123456789abcdef"
+
+# Opcionais
+# gcp_region             = "us-central1"
+# budget_amount_usd      = 5
+# pages_project_name     = "nexus"
+# custom_domain          = "nexus.exemplo.com"
+# matching_max_instances = 2
+# matching_image é preenchida pelo script de deploy.

@@ -1,0 +1,18 @@
+/* Console fora da home: painel de comando ancorado no topo, sobre um véu. */
+.dock {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 12vh var(--gutter) var(--s-5);
+  background: rgb(15 8 24 / 0.7);
+  animation: dock-fade var(--d-med) var(--ease);
+}
+.dock-panel { width: min(680px, 100%); animation: dock-in var(--d-med) var(--ease); }
+@keyframes dock-fade { from { opacity: 0; } }
+@keyframes dock-in { from { opacity: 0; transform: translateY(-8px); } }
+@media (max-width: 720px) {
+  .dock { padding-top: 64px; }
+}
