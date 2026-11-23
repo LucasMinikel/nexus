@@ -385,3 +385,12 @@
 .tm-job.dim { opacity: 0.18; }
 .vm-clients tr.on td { background: rgb(255 61 139 / 0.08); }
 .vm-clients .vm-link[aria-pressed='true'] { color: var(--signal); }
+
+/* Opções de trajeto do par aberto: a pé, com N conduções, de carro. */
+.vm-trips { margin-top: var(--s-3); }
+.vm-trips-title { margin: 0 0 var(--s-1); font: 600 var(--t-xs)/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
+.vm-trips .vm-table td { padding-block: 0.25rem; }
+.vm-trips .vm-table td.bad { color: var(--bad); }
+.vm-trips .vm-table .vm-link { font-weight: 500; text-align: left; }
+.vm-trips > p { margin: var(--s-2) 0 0; }
+.vm-trips .vm-table td:nth-child(2), .vm-trips .vm-table td:nth-child(3) { white-space: nowrap; }

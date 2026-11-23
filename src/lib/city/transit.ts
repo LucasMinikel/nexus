@@ -62,6 +62,8 @@ export interface TransitCity extends CityMap {
   streetCount: number;
   /** Linha de cada nó de parada (índice em `lines`), a partir de streetCount. */
   stopLine: Int32Array;
+  /** A mesma cidade de carro (mesmos nós de rua), para comparar as opções de trajeto. */
+  car: CityMap;
 }
 
 const walkMin = (km: number) => (km / SPEED_KMH.walk) * 60;
@@ -108,6 +110,7 @@ export function withTransit(base: CityMap, lines: TransitLine[]): TransitCity {
     lines,
     streetCount: N,
     stopLine,
+    car: base,
     network: { adjacency, segments: base.network.segments },
     point: (i) => (i < N ? base.point(i) : stopPos[i - N]),
   };

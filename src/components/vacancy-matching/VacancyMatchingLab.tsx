@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { Heading, HeadingLevel } from './heading';
-import { REGIONS, regionOf, SPEED_KMH, straightKm, type Point, type RegionId } from '../../lib/city/city';
+import { commute, REGIONS, regionOf, SPEED_KMH, straightKm, type Commute, type Point, type RegionId } from '../../lib/city/city';
 import type { CityMap } from '../../lib/city/map';
 import { isTransit, MAX_RIDES, MODE_INFO, tripLegs, type Leg, type TransitMode } from '../../lib/city/transit';
 import { ALGORITHMS, pathsFor, type MatchingRequest } from '../../lib/matching/api';
@@ -100,6 +100,17 @@ function legsText(legs: Leg[]): string {
         : `${MODE_INFO[l.mode].label} ${l.ref || l.name} (espera ~${l.waitMin} min, ${l.stops} parada${l.stops === 1 ? '' : 's'}, ${num(l.minutes, 0)} min)`,
     )
     .join(' → ');
+}
+
+/** Uma forma de ir de casa até a vaga: a pé, com até N conduções ou de carro. */
+export interface TripOption {
+  key: string;
+  label: string;
+  trip: Commute;
+  /** Trechos (transporte público); null de carro. */
+  legs: Leg[] | null;
+  /** Conduções por sentido; null de carro. */
+  rides: number | null;
 }
 
 /** Situação da oferta de uma vaga a uma pessoa. */
@@ -393,13 +404,38 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
     }
     return [...by].map(([mode, d]) => ({ mode, d: d.join(''), rail: MODE_INFO[mode].rail }));
   }, [city]);
-  const legsOf = (e: PairEvaluation): Leg[] | null => {
-    if (!isTransit(city) || !e.commute) return null;
-    const v = vacancyById.get(e.vacancyId);
-    if (!v) return null;
-    return e.commute.along ? tripLegs(city, e.commute.path, e.commute.along) : null;
-  };
-  const activeLegs = activePair ? legsOf(activePair) : null;
+  /**
+   * Opções de trajeto do par aberto: o melhor tempo com 0, 1, 2… conduções (só as que mudam algo) e de carro.
+   * O cálculo já existe (o Dijkstra guarda o tempo por número de conduções); aqui só se lê cada camada.
+   */
+  const tripOptions: TripOption[] = useMemo(() => {
+    if (!activePair?.commute || !isTransit(city)) return [];
+    const v = vacancyById.get(activePair.vacancyId)!;
+    const c = candidateById.get(activePair.candidateId)!;
+    const sp = paths.fromNode(city.nearest(v.pos));
+    const out: TripOption[] = [];
+    for (let k = 0; k <= MAX_RIDES; k++) {
+      const t = commute(c.pos, v.pos, sp, city, k);
+      if (out.some((o) => o.rides === t.rides)) continue; // permitir mais conduções não mudou nada
+      out.push({
+        key: `r${t.rides}`,
+        label: t.rides === 0 ? 'Só a pé' : `${t.rides} ${t.rides === 1 ? 'condução' : 'conduções'}`,
+        trip: t,
+        legs: tripLegs(city, t.path, t.along!),
+        rides: t.rides!,
+      });
+    }
+    const car = city.car;
+    const tc = commute(c.pos, v.pos, pathsFor(car).fromNode(car.nearest(v.pos)), car);
+    out.push({ key: 'car', label: 'De carro', trip: tc, legs: null, rides: null });
+    return out;
+  }, [activePair, city, paths, vacancyById, candidateById]);
+  const [tripKey, setTripKey] = useState<string | null>(null);
+  // Opção desenhada: a escolhida, ou a que o matching usa (a do par).
+  const usedKey = activePair?.commute?.rides !== undefined ? `r${activePair.commute.rides}` : null;
+  const chosenTrip = tripOptions.find((o) => o.key === (tripKey ?? usedKey)) ?? null;
+  const activeLegs = chosenTrip ? chosenTrip.legs : null;
+  const activeCarPath = chosenTrip && !chosenTrip.legs ? chosenTrip.trip.path : null;
 
   const people = useMemo(() => {
     const out = new Map<string, PersonLook>();
@@ -668,7 +704,9 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
                       y2={vacancyById.get(activePair.vacancyId)!.pos.y}
                       className="vm-straight"
                     />
-                    {activeLegs ? (
+                    {activeCarPath ? (
+                      <polyline key="car" points={pts(routePoints(city, activeCarPath))} pathLength={1} className="vm-route tm-draw" />
+                    ) : activeLegs ? (
                       activeLegs.map((l, i) =>
                         l.kind === 'walk' ? (
                           <polyline key={i} points={pts(routePoints(city, l.nodes))} className="tm-leg walk" />
@@ -871,9 +909,15 @@ export default function VacancyMatchingLab({ level = 'h3', city }: { level?: 'h2
               onOffer={(e) => offer(e.vacancyId, e.candidateId)}
               onRespond={(e, accept) => respond(e.vacancyId, e.candidateId, accept)}
               onCancel={(e) => cancelOffer(e.vacancyId, e.candidateId)}
-              legsOf={legsOf}
+              tripOptions={tripOptions}
+              chosenTrip={chosenTrip?.key ?? null}
+              usedTrip={usedKey}
+              onChooseTrip={setTripKey}
               active={activePair}
-              onPick={(e) => setPair({ vacancyId: e.vacancyId, candidateId: e.candidateId })}
+              onPick={(e) => {
+                setPair({ vacancyId: e.vacancyId, candidateId: e.candidateId });
+                setTripKey(null);
+              }}
               weights={weights}
             />
           )}
@@ -1078,7 +1122,12 @@ interface RankingProps {
   onOffer: (e: PairEvaluation) => void;
   onRespond: (e: PairEvaluation, accept: boolean) => void;
   onCancel: (e: PairEvaluation) => void;
-  legsOf: (e: PairEvaluation) => Leg[] | null;
+  /** Opções de trajeto do par aberto (vazio de carro). */
+  tripOptions: TripOption[];
+  chosenTrip: string | null;
+  /** A opção que o matching usa (dentro das conduções pagas, quando a regra está ligada). */
+  usedTrip: string | null;
+  onChooseTrip: (key: string) => void;
 }
 
 const OFFER_BADGE: Record<OfferState, string> = { ofertada: 'oferta enviada', aceita: 'contratado', recusada: 'recusou' };
@@ -1139,7 +1188,7 @@ function checksOf(e: PairEvaluation, v: Vacancy, c: Candidate, k: Constraints): 
   return out;
 }
 
-function Ranking({ ranking, perspective, nameOf, vacancyOf, candidateOf, constraints, isMatched, active, onPick, weights, offerOf, canOffer, onOffer, onRespond, onCancel, legsOf }: RankingProps) {
+function Ranking({ ranking, perspective, nameOf, vacancyOf, candidateOf, constraints, isMatched, active, onPick, weights, offerOf, canOffer, onOffer, onRespond, onCancel, tripOptions, chosenTrip, usedTrip, onChooseTrip }: RankingProps) {
   const [showFiltered, setShowFiltered] = useState(false);
   const feasible = ranking.filter((e) => e.feasible);
   const filtered = ranking.filter((e) => !e.feasible);
@@ -1203,7 +1252,9 @@ function Ranking({ ranking, perspective, nameOf, vacancyOf, candidateOf, constra
                 </li>
               ))}
             </ul>
-            {legsOf(e) && <p className="small vm-trip">Trajeto: {legsText(legsOf(e)!)}.</p>}
+            {tripOptions.length > 0 && (
+              <TripOptions options={tripOptions} chosen={chosenTrip} used={usedTrip} candidate={c} fares={e.fares} onChoose={onChooseTrip} />
+            )}
             <details className="vm-why">
               <summary>Como a compatibilidade de {pct(e.score)} foi calculada</summary>
               <table className="vm-table">
@@ -1251,6 +1302,73 @@ function Ranking({ ranking, perspective, nameOf, vacancyOf, candidateOf, constra
           {showFiltered && <ol className="filtered">{filtered.map((e) => row(e))}</ol>}
         </>
       )}
+    </div>
+  );
+}
+
+/** Formas de ir de casa até a vaga, lado a lado; clicar numa desenha o trajeto no mapa. */
+function TripOptions({
+  options,
+  chosen,
+  used,
+  candidate,
+  fares,
+  onChoose,
+}: {
+  options: TripOption[];
+  chosen: string | null;
+  used: string | null;
+  candidate: Candidate;
+  fares: PairEvaluation['fares'];
+  onChoose: (key: string) => void;
+}) {
+  const fastest = Math.min(...options.filter((o) => o.rides !== null).map((o) => o.trip.minutes));
+  const current = options.find((o) => o.key === chosen);
+  return (
+    <div className="vm-trips">
+      <p className="vm-trips-title">Opções de trajeto</p>
+      <table className="vm-table">
+        <thead>
+          <tr>
+            <th title="Conduções em cada sentido (ida ou volta)">Como (por sentido)</th>
+            <th>Tempo</th>
+            <th title="Conduções por dia, ida e volta">Cond./dia</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {options.map((o) => {
+            const inTime = o.trip.minutes <= candidate.maxCommuteMin;
+            const paid = o.rides === null || !fares || 2 * o.rides <= fares.paid;
+            const notes = [
+              o.key === used ? 'usada no matching' : '',
+              o.rides !== null && o.trip.minutes === fastest && options.filter((x) => x.rides !== null).length > 1 ? 'mais rápida' : '',
+              o.rides === null ? 'comparação' : '',
+            ].filter(Boolean);
+            return (
+              <tr key={o.key} className={o.key === chosen ? 'on' : ''}>
+                <td>
+                  <button className="vm-link" aria-pressed={o.key === chosen} onClick={() => onChoose(o.key)}>
+                    {o.label}
+                  </button>
+                </td>
+                <td className={inTime ? '' : 'bad'} title={inTime ? 'Dentro do tempo máximo da pessoa' : `Passa do máximo de ${candidate.maxCommuteMin} min`}>
+                  {num(o.trip.minutes, 0)} min
+                </td>
+                <td className={paid ? '' : 'bad'} title={paid ? undefined : `A vaga paga ${fares?.paid} por dia`}>
+                  {o.rides === null ? '—' : 2 * o.rides}
+                </td>
+                <td className="small muted">{notes.join(' · ')}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="small muted">
+        Aceita até {candidate.maxCommuteMin} min{fares ? `; a vaga paga ${fares.paid} conduções por dia` : ''}. Em vermelho, o que não cabe.
+      </p>
+      {current?.legs && <p className="small vm-trip">Trajeto: {legsText(current.legs)}.</p>}
+      {current && !current.legs && <p className="small vm-trip">De carro: {num(current.trip.networkKm, 1)} km pelas ruas.</p>}
     </div>
   );
 }

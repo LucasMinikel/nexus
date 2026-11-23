@@ -26,12 +26,12 @@ Prioridade: experiências em que o visitante observa agentes e algoritmos tomand
 | ⬜ | Mundo 2D com regras editáveis | 1.4 Game World Simulation | navegador |
 | ⬜ | Inspetor de agentes | 1.5 Game AI Visualization | navegador |
 | ⬜ | Simulador de netcode | 1.6 Multiplayer Game Engineering | navegador |
-| ⬜ | Explorador espacial | 2.1 Maps & Spatial Visualization | navegador |
-| ⬜ | Comparador de rotas | 2.2 Route Optimization & Pathfinding | navegador |
+| ⬜ | Mapa de oportunidades → dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) (era “Explorador espacial”) | 2.1 Maps & Spatial Visualization | navegador |
+| ✅ | Opções de trajeto → dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) (era “Comparador de rotas”) | 2.2 Route Optimization & Pathfinding | navegador |
 | ✅ | Motor de correspondência geográfica → implementado dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) | 2.3 Geospatial Matching Engine | navegador |
 | ✅ | [Vagas e Candidatos](../src/pages/projetos/vagas.astro) | 2.4 Vacancy & Candidate Matching | navegador |
 | ✅ | [Foto de documento](../src/pages/projetos/documentos.astro): verificação da foto antes do envio, do projeto doc-check (dependência `github:LucasMinikel/doc-check#v0.1.0`) | Computer Vision & Document Intelligence | navegador |
-| ⬜ | Living Geographic World | 3.1 Spatial Simulation | navegador |
+| ⬜ | Simular semanas → dentro de [Vagas e Candidatos](../src/pages/projetos/vagas.astro) (era “Living Geographic World”) | 3.1 Spatial Simulation | navegador |
 | ⬜ | NEXUS Mobile | 4.1 Mobile App Development | navegador |
 | ⬜ | Sincronização offline | 4.1 Mobile App Development | navegador |
 | ⬜ | Pipeline de release visual | 4.2 Build, Release & Play Store Deploy | navegador |
@@ -207,7 +207,8 @@ Tópicos: Interactive Maps · Geospatial Visualization · Geographic Clustering 
 
 Experimentos:
 
-- ⬜ **Explorador espacial** (navegador) — Mapa interativo com milhares de pontos, filtros por região, distância, categoria e densidade, comparando índices espaciais.
+- ⬜ **Mapa de oportunidades** (dentro de Vagas e Candidatos; decisão de 2026-11-23) — Hexágonos com a densidade de vagas e de candidatos no lugar das 6 regiões fixas, filtros por área, curso, turno e tempo de viagem, e onde há vagas sem candidatos alcançáveis (e o contrário). Fecha as pendências “clusters e heatmap” e “área de cobertura por vaga” do 2.4.
+- ⬜ Hipótese para o Lab: “um índice espacial (grade, H3 ou árvore) muda a busca por proximidade de O(n) para quase constante a partir de quantos pontos?” — medição, não projeto.
 
 ### 2.2 Route Optimization & Pathfinding
 
@@ -217,7 +218,8 @@ Tópicos: A* Pathfinding · Dijkstra · BFS · Multi-Stop Routing · Shortest Pa
 
 Experimentos:
 
-- ⬜ **Comparador de rotas** (navegador) — Origem e destino no mapa, comparação de caminhos por distância, duração estimada e número de conexões, separando distância em linha reta de distância pela rede viária.
+- ✅ **Opções de trajeto** (dentro de Vagas e Candidatos; 2026-11-23) — Ao abrir um par, as formas de ir de casa até a vaga lado a lado: só a pé, com 1, 2 ou 3 conduções e de carro, com tempo, conduções por dia e o que cabe no tempo máximo e no vale-transporte; clicar desenha o trajeto. Usa o Dijkstra separado por número de conduções.
+- ⬜ Hipótese para o Lab: “A* acha a mesma rota que Dijkstra explorando menos nós?” e rotas com várias paradas (caixeiro-viajante) — medições sobre os mapas reais, não projeto.
 
 ### 2.3 Geospatial Matching Engine
 
@@ -294,7 +296,8 @@ Tópicos: Population Movement Simulation · Urban Mobility Simulation · Geograp
 
 Experimentos:
 
-- ⬜ **Living Geographic World** (navegador) — Mapa com agentes que se movimentam, têm destinos, procuram recursos, seguem rotas e reagem ao ambiente. Ajuste quantidade, velocidade, destinos, obstáculos, regiões, pontos de interesse, regras de deslocamento e recursos.
+- ⬜ **Simular semanas** (dentro de Vagas e Candidatos; decisão de 2026-11-23) — O tempo passa: vagas abrem e fecham, candidatos chegam, ofertas são aceitas ou recusadas, e quem foi contratado aparece indo de casa até a vaga pela rota real. Gráfico de postos preenchidos e candidatos sem vaga ao longo do tempo, por região.
+- O mundo genérico com agentes, obstáculos e recursos foi para o 1.4 (Mundo 2D com regras editáveis).
 
 #### Tecnologias candidatas: Jogos e simulação
 
